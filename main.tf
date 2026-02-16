@@ -35,6 +35,12 @@ variable "private_subnets" {
   ]
 }
 
+variable "allowed_cidrs" {
+  type        = list(string)
+  description = "CIDRs allowed to access K8TRE ('myip' is dynamically replaced by your current IP)"
+  default     = ["myip"]
+}
+
 
 terraform {
   required_providers {
@@ -82,7 +88,8 @@ data "http" "myip" {
 
 locals {
   allow_ips = [
-    "${chomp(data.http.myip.response_body)}/32",
+    for ip in var.allowed_cidrs :
+    replace(ip, "/^myip$/", "${chomp(data.http.myip.response_body)}/32")
   ]
 }
 

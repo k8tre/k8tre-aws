@@ -1,20 +1,41 @@
 terraform {
   required_providers {
     aws = {
-      source = "hashicorp/aws"
+      source  = "hashicorp/aws"
+      version = "~> 6.14"
     }
   }
+
+  required_version = ">= 1.10.0"
 }
+
+######################################################################
+# Public zone
+######################################################################
+
+resource "aws_route53_zone" "public-zone" {
+  name = var.name
+}
+
+resource "aws_route53_record" "public-record" {
+  for_each = var.public-records
+
+  zone_id = aws_route53_zone.public-zone.zone_id
+  name    = format("%s.%s", split(" ", each.key)[0], var.name)
+  type    = split(" ", each.key)[1]
+  ttl     = 300
+  records = each.value
+}
+
+
+######################################################################
+# Private zone
+######################################################################
 
 resource "aws_security_group" "inbound-dns" {
   name        = "inbound-dns"
   description = "Allow inbound DNS"
   vpc_id      = var.vpc
-
-  tags = {
-    "TFModule" = "${var.name_tag}/resolver",
-    "Name"     = "inbound-dns"
-  }
 }
 
 resource "aws_security_group_rule" "inbound-dns-tcp" {
@@ -37,7 +58,7 @@ resource "aws_security_group_rule" "inbound-dns-udp" {
   security_group_id = aws_security_group.inbound-dns.id
 }
 
-resource "aws_route53_resolver_endpoint" "mass-resolver" {
+resource "aws_route53_resolver_endpoint" "private-resolver" {
   name      = "${var.name_tag}-Resolver"
   direction = "INBOUND"
 
@@ -54,31 +75,21 @@ resource "aws_route53_resolver_endpoint" "mass-resolver" {
     subnet_id = var.subnet1
     ip        = var.ip1
   }
-
-  tags = {
-    "TFModule" = "${var.name_tag}/resolver",
-    "Name"     = "${var.name_tag}-resolver"
-  }
 }
 
-resource "aws_route53_zone" "mass-zone" {
+resource "aws_route53_zone" "private-zone" {
   name = var.name
 
   # This is required for a private zone
   vpc {
     vpc_id = var.vpc
   }
-
-  tags = {
-    "TFModule" = "${var.name_tag}/resolver",
-    "Name"     = "${var.name_tag}-zone"
-  }
 }
 
 resource "aws_route53_record" "static-record" {
   for_each = zipmap([for e in var.static : format("%s:%s:%s", e[0], e[1], e[2])], var.static)
 
-  zone_id = aws_route53_zone.mass-zone.zone_id
+  zone_id = aws_route53_zone.private-zone.zone_id
   name    = format("%s.%s", each.value[0], var.name)
   type    = each.value[1]
   ttl     = var.static-ttl
@@ -96,13 +107,17 @@ resource "aws_route53_resolver_firewall_rule_group_association" "resolver-fw-ass
   vpc_id                 = var.vpc
 }
 
-resource "aws_route53_resolver_firewall_domain_list" "resolver-fw-list-mass" {
-  name = var.name_tag
-  domains = [
+locals {
+  r53_always_allowed_domains = [
     "*.amazonaws.com.",
     format("*.%s.", var.name),
     format("%s.", var.name)
   ]
+}
+
+resource "aws_route53_resolver_firewall_domain_list" "resolver-fw-list-mass" {
+  name    = var.name_tag
+  domains = concat(local.r53_always_allowed_domains, var.allowed_domains)
   tags = {
     "TFModule" = "${var.name_tag}/resolver",
     "Name"     = "${var.name_tag}-resolver-fw-list-${var.name_tag}"
@@ -120,7 +135,7 @@ resource "aws_route53_resolver_firewall_domain_list" "resolver-fw-list-default" 
   }
 }
 
-resource "aws_route53_resolver_firewall_rule" "resolver-rule-mass-allow" {
+resource "aws_route53_resolver_firewall_rule" "resolver-rule-private-allow" {
   name                    = "${var.name_tag}-allow"
   action                  = "ALLOW"
   firewall_rule_group_id  = aws_route53_resolver_firewall_rule_group.resolver-fw.id
@@ -152,6 +167,6 @@ resource "aws_cloudwatch_metric_alarm" "alarm-resolver" {
   ok_actions                = var.alarm_topics
 
   dimensions = {
-    EndpointId = aws_route53_resolver_endpoint.mass-resolver.id
+    EndpointId = aws_route53_resolver_endpoint.private-resolver.id
   }
 }
