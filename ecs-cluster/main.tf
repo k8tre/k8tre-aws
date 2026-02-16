@@ -23,7 +23,7 @@ resource "aws_kms_key" "ecs" {
         Sid    = "Allow CloudWatch Logs"
         Effect = "Allow"
         Principal = {
-          Service = format("logs.%s.amazonaws.com", data.aws_region.current.name)
+          Service = "logs.${data.aws_region.current.region}.amazonaws.com"
         }
         Action = [
           "kms:Encrypt*",
@@ -36,7 +36,7 @@ resource "aws_kms_key" "ecs" {
         Condition = {
           ArnLike = {
             "kms:EncryptionContext:aws:logs:arn" = [
-              format("arn:aws:logs:%s:%s:log-group:%s", data.aws_region.current.name, data.aws_caller_identity.current.account_id, var.name)
+              "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:${var.name}/*"
             ]
           }
         }
@@ -45,8 +45,13 @@ resource "aws_kms_key" "ecs" {
   })
 }
 
+resource "aws_kms_alias" "ecs" {
+  name          = "alias/${var.name}/ecs"
+  target_key_id = aws_kms_key.ecs.key_id
+}
+
 resource "aws_cloudwatch_log_group" "ecs-logs" {
-  name              = var.name
+  name              = "${var.name}/ecs"
   retention_in_days = 3653
 
   kms_key_id = aws_kms_key.ecs.arn

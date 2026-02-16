@@ -13,3 +13,8 @@ output "ecs_cluster" {
 output "discovery_id" {
   value = aws_service_discovery_private_dns_namespace.ecs.id
 }
+
+output "kms_logs_arn" {
+  description = "KMS key that can be used for log groups {ecs_cluster}/*"
+  value       = aws_kms_key.ecs.arn
+}

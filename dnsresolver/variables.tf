@@ -5,22 +5,22 @@ variable "name" {
 
 variable "subnet0" {
   type        = string
-  description = "subnet id"
+  description = "Private zone subnet id"
 }
 
 variable "ip0" {
   type        = string
-  description = "resolver ip 0"
+  description = "Private zone resolver ip 0"
 }
 
 variable "subnet1" {
   type        = string
-  description = "subnet id"
+  description = "Private zone subnet id"
 }
 
 variable "ip1" {
   type        = string
-  description = "resolver ip 1"
+  description = "Private zone resolver ip 1"
 }
 
 variable "vpc" {
@@ -30,13 +30,13 @@ variable "vpc" {
 
 variable "name_tag" {
   type        = string
-  description = "a name used for tagging"
-  default     = "mass"
+  description = "Name used for private resources"
+  default     = "private"
 }
 
 variable "allow_dns_from_cidrs" {
   type        = list(any)
-  description = "list of cidrs to allow dns from"
+  description = "List of cidrs to allow private zone dns from"
   default     = ["10.0.0.0/8"]
 }
 
@@ -53,4 +53,21 @@ variable "static" {
 variable "alarm_topics" {
   type        = list(string)
   description = "ARN of CloudWatch alarms"
+}
+
+variable "allowed_domains" {
+  type        = list(string)
+  description = "List of allowed private zone DNS lookup domains"
+  default     = []
+}
+
+variable "public-records" {
+  type        = map(list(string))
+  description = <<EOF
+    "map of {'<name> <type>' => [destinations]}"
+    e.g.
+      "dev-a A" = ["18.133.53.195"]
+      "dev-cname CNAME" = ["foo.example.org"]
+  EOF
+  default     = {}
 }

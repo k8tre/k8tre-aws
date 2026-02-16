@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 resource "aws_cloudwatch_log_group" "squid_proxy" {
-  name = "squid-proxy"
+  name = "${var.ecs_cluster}/squid-proxy"
 
   kms_key_id = var.kms_key
 }
@@ -49,7 +49,7 @@ resource "aws_iam_role_policy" "squid_proxy_exec" {
           "logs:CreateLogStream",
           "logs:PutLogEvents",
         ]
-        Resource = format("arn:aws:logs:%s:%s:log-group:%s:*", data.aws_region.current.name, data.aws_caller_identity.current.account_id, aws_cloudwatch_log_group.squid_proxy.name)
+        Resource = format("arn:aws:logs:%s:%s:log-group:%s:*", data.aws_region.current.region, data.aws_caller_identity.current.account_id, aws_cloudwatch_log_group.squid_proxy.name)
       }
     ]
   })
@@ -88,7 +88,7 @@ resource "aws_iam_role" "squid_proxy_task" {
         }
         Condition = {
           ArnLike = {
-            "aws:SourceArn" = format("arn:aws:ecs:%s:%s:*", data.aws_region.current.name, data.aws_caller_identity.current.account_id)
+            "aws:SourceArn" = format("arn:aws:ecs:%s:%s:*", data.aws_region.current.region, data.aws_caller_identity.current.account_id)
           },
           StringEquals = {
             "aws:SourceAccount" = data.aws_caller_identity.current.account_id
@@ -134,7 +134,7 @@ resource "aws_ecs_task_definition" "squid_proxy" {
         logDriver = "awslogs"
         options = {
           awslogs-group         = aws_cloudwatch_log_group.squid_proxy.name
-          awslogs-region        = data.aws_region.current.name
+          awslogs-region        = data.aws_region.current.region
           awslogs-stream-prefix = "ecs"
         }
       }
@@ -239,7 +239,8 @@ resource "aws_service_discovery_service" "squid_proxy" {
     routing_policy = "MULTIVALUE"
   }
 
-  health_check_config {
-    failure_threshold = 1
-  }
+  # health_check_config {
+  #   failure_threshold = 1
+  #   type              = "TCP"
+  # }
 }
