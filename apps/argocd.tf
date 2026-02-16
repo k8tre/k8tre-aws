@@ -1,3 +1,29 @@
+# Create the plugin config map first so that it can be referenced later in the helm release.
+resource "kubernetes_config_map" "cmp_plugin" {
+  metadata {
+    name      = "cmp-plugin"
+    namespace = "argocd"
+  }
+
+  data = {
+    "plugin.yaml" = <<-EOT
+      apiVersion: argoproj.io/v1alpha1
+      kind: ConfigManagementPlugin
+      metadata:
+        name: kustomize-with-envsubst
+      spec:
+        version: v1.0
+        generate:
+          command: [sh, -c]
+          args:
+            - |
+              kustomize build --enable-helm --load-restrictor LoadRestrictionsNone . | \
+              sed "s/\$${ENVIRONMENT}/$${ARGOCD_ENV_ENVIRONMENT}/g; s/\$${DOMAIN}/$${ARGOCD_ENV_DOMAIN}/g; s/\\.ENVIRONMENT\\./.$${ARGOCD_ENV_ENVIRONMENT}./g; s/\\.DOMAIN/.$${ARGOCD_ENV_DOMAIN}/g; s/^ENVIRONMENT$/$${ARGOCD_ENV_ENVIRONMENT}/g; s/^DOMAIN$/$${ARGOCD_ENV_DOMAIN}/g"
+    EOT
+  }
+
+  provider = kubernetes.k8tre-dev-argocd
+}
 
 # https://github.com/argoproj/argo-helm/tree/argo-cd-9.0.5/charts/argo-cd
 resource "helm_release" "argocd" {
@@ -23,7 +49,61 @@ resource "helm_release" "argocd" {
     },
   ]
 
-  depends_on = [kubernetes_namespace.argocd]
+  # Specify the custom plugin extra containers and volumes.
+  values = [
+    yamlencode({
+      repoServer = {
+        volumes = [
+          {
+            name = "cmp-plugin"
+            configMap = {
+              name = "cmp-plugin"
+            }
+          }
+        ]
+        extraContainers = [
+          {
+            name    = "cmp-kustomize-envsubst"
+            command = ["/var/run/argocd/argocd-cmp-server"]
+            image   = "quay.io/argoproj/argocd:{{ .Chart.AppVersion }}"
+            securityContext = {
+              runAsNonRoot             = true
+              runAsUser                = 999
+              allowPrivilegeEscalation = false
+              readOnlyRootFilesystem   = true
+              capabilities = {
+                drop = ["ALL"]
+              }
+              seccompProfile = {
+                type = "RuntimeDefault"
+              }
+            }
+            volumeMounts = [
+              {
+                mountPath = "/var/run/argocd"
+                name      = "var-files"
+              },
+              {
+                mountPath = "/home/argocd/cmp-server/plugins"
+                name      = "plugins"
+              },
+              {
+                mountPath = "/tmp"
+                name      = "tmp"
+              },
+              {
+                mountPath = "/home/argocd/cmp-server/config/plugin.yaml"
+                subPath   = "plugin.yaml"
+                name      = "cmp-plugin"
+              }
+            ]
+          }
+        ]
+      }
+    })
+  ]
+
+  depends_on = [kubernetes_namespace.argocd, kubernetes_config_map.cmp_plugin]
 
   provider = helm.k8tre-dev-argocd
 }
