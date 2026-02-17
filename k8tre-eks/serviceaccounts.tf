@@ -4,7 +4,7 @@
 
 module "eks_pod_identity_load_balancer" {
   source                          = "terraform-aws-modules/eks-pod-identity/aws"
-  version                         = "2.0.0"
+  version                         = "2.7.0"
   name                            = "${var.cluster_name}-aws-lb-controller"
   attach_aws_lb_controller_policy = true
 
@@ -24,7 +24,7 @@ module "eks_pod_identity_load_balancer" {
 
 module "aws_ebs_csi_pod_identity" {
   source                    = "terraform-aws-modules/eks-pod-identity/aws"
-  version                   = "2.0.0"
+  version                   = "2.7.0"
   name                      = "aws-ebs-csi"
   attach_aws_ebs_csi_policy = true
   aws_ebs_csi_kms_arns      = ["arn:aws:kms:*:*:key/*"]
@@ -32,14 +32,14 @@ module "aws_ebs_csi_pod_identity" {
 
 module "aws_efs_csi_pod_identity" {
   source                    = "terraform-aws-modules/eks-pod-identity/aws"
-  version                   = "2.0.0"
+  version                   = "2.7.0"
   name                      = "aws-efs-csi"
   attach_aws_efs_csi_policy = true
 }
 
 module "cluster_autoscaler_pod_identity" {
   source                           = "terraform-aws-modules/eks-pod-identity/aws"
-  version                          = "2.0.0"
+  version                          = "2.7.0"
   name                             = "cluster-autoscaler"
   attach_cluster_autoscaler_policy = true
   cluster_autoscaler_cluster_names = [var.cluster_name]
@@ -72,7 +72,7 @@ data "aws_iam_policy_document" "ack_ec2" {
 
 module "ack_ec2_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "2.0.0"
+  version = "2.7.0"
   name    = "ack-ec2-controller"
 
   # Associate identity with the ServiceAccount that will be created by the
