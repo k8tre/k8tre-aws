@@ -4,6 +4,18 @@ variable "dns_domain" {
   description = "DNS domain"
 }
 
+
+######################################################################
+# EFS
+
+module "efs" {
+  source  = "./efs"
+  name    = "k8tre-efs"
+  vpc_id  = module.vpc.vpc_id
+  subnets = slice(module.vpc.private_subnets, 0, 2)
+}
+
+
 ######################################################################
 # DNS
 

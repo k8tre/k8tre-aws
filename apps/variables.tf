@@ -47,6 +47,11 @@ variable "k8tre_github_ref" {
   description = "K8TRE git ref (commit/branch/tag)"
 }
 
+variable "efs_name" {
+  type        = string
+  description = "EFS name creation token, must match module.efs var.name"
+}
+
 # Cluster where K8TRE wil be deployed
 data "aws_eks_cluster" "deployment" {
   name = data.terraform_remote_state.k8tre.outputs.k8tre_cluster_name
