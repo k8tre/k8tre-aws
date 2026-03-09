@@ -1,5 +1,11 @@
 # EKS pod identities for Kubernetes Service Accounts
 
+locals {
+  create_external_dns_pod_identity = length(var.hosted_zone_id) > 0 ? 0 : 1
+}
+
+######################################################################
+# Built in policies
 # https://registry.terraform.io/modules/terraform-aws-modules/eks-pod-identity/aws/latest
 
 module "eks_pod_identity_load_balancer" {
@@ -57,6 +63,51 @@ module "cluster_autoscaler_pod_identity" {
     }
   }
 }
+
+module "external_dns_pod_identity" {
+  source  = "terraform-aws-modules/eks-pod-identity/aws"
+  version = "2.7.0"
+
+  count = local.create_external_dns_pod_identity
+
+  name = "external-dns"
+
+  attach_external_dns_policy    = true
+  external_dns_hosted_zone_arns = ["arn:aws:route53:::hostedzone/${var.hosted_zone_id}"]
+
+  associations = {
+    cluster1 = {
+      cluster_name    = var.cluster_name
+      namespace       = "externaldns"
+      service_account = "externaldns-sa"
+    }
+  }
+}
+
+module "external_secrets_pod_identity" {
+  source  = "terraform-aws-modules/eks-pod-identity/aws"
+  version = "2.7.0"
+
+  name = "external-secrets"
+
+  # TODO: tighten up these policies
+  attach_external_secrets_policy        = true
+  external_secrets_ssm_parameter_arns   = ["arn:aws:ssm:*:*:parameter/*"]
+  external_secrets_secrets_manager_arns = ["arn:aws:secretsmanager:*:*:secret:*"]
+  external_secrets_kms_key_arns         = ["arn:aws:kms:*:*:key/*"]
+
+  # Should External Secrets be able to create AWS secrets?
+  external_secrets_create_permission = false
+
+  associations = {
+    cluster1 = {
+      cluster_name    = var.cluster_name
+      namespace       = "external-secrets"
+      service_account = "external-secrets-sa"
+    }
+  }
+}
+
 
 ######################################################################
 # ACK EC2 Controller pod identity

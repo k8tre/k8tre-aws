@@ -124,7 +124,8 @@ resource "kubernetes_secret" "argocd-cluster-k8tre-dev" {
     namespace = "argocd"
     labels = merge(
       { "argocd.argoproj.io/secret-type" = "cluster" },
-      var.k8tre_cluster_labels
+      var.k8tre_cluster_labels,
+      var.k8tre_cluster_label_overrides,
     )
   }
   data = {
