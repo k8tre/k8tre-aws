@@ -107,6 +107,12 @@ variable "additional_eks_addons" {
   description = "Map of additional EKS addons"
 }
 
+variable "hosted_zone_id" {
+  type        = string
+  default     = ""
+  description = "Route53 hosted zone ID for External DNS, set to empty to disable"
+}
+
 variable "argocd_create_role" {
   type        = bool
   description = "Whether to create an ArgoCD pod identity and roles"

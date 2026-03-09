@@ -105,3 +105,7 @@ terraform fmt -recursive
 tflint --recursive
 npx prettier@3.6.2 --write '**/*.{yaml,yml,md}'
 ```
+
+### Configuring K8TRE
+
+Set the required labels using `k8tre_cluster_label_overrides` in `apps/variables.tf`
