@@ -21,6 +21,14 @@ resource "helm_release" "cilium" {
       value = "false"
     },
     {
+      name  = "gatewayAPI.enabled"
+      value = "true"
+    },
+    {
+      name  = "kubeProxyReplacement"
+      value = "true"
+    },
+    {
       name  = "routingMode"
       value = "native"
     },
