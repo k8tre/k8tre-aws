@@ -1,7 +1,8 @@
 # EKS pod identities for Kubernetes Service Accounts
 
 locals {
-  create_external_dns_pod_identity = length(var.hosted_zone_id) > 0 ? 0 : 1
+  create_pod_identities            = var.create_pod_identities ? 1 : 0
+  create_external_dns_pod_identity = (var.create_pod_identities && length(var.hosted_zone_id) > 0) ? 1 : 0
 }
 
 ######################################################################
@@ -46,6 +47,7 @@ module "aws_efs_csi_pod_identity" {
 module "cluster_autoscaler_pod_identity" {
   source                           = "terraform-aws-modules/eks-pod-identity/aws"
   version                          = "2.7.0"
+  count                            = local.create_pod_identities
   name                             = "cluster-autoscaler"
   attach_cluster_autoscaler_policy = true
   cluster_autoscaler_cluster_names = [var.cluster_name]
@@ -87,6 +89,7 @@ module "external_dns_pod_identity" {
 module "external_secrets_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
   version = "2.7.0"
+  count   = local.create_pod_identities
 
   name = "external-secrets"
 
@@ -114,6 +117,7 @@ module "external_secrets_pod_identity" {
 # https://aws-controllers-k8s.github.io/docs/api-reference/#ec2
 
 data "aws_iam_policy_document" "ack_ec2" {
+  count = local.create_pod_identities
   statement {
     sid       = "InstanceProfiles"
     actions   = ["iam:PassRole"]
@@ -124,6 +128,7 @@ data "aws_iam_policy_document" "ack_ec2" {
 module "ack_ec2_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
   version = "2.7.0"
+  count   = local.create_pod_identities
   name    = "ack-ec2-controller"
 
   # Associate identity with the ServiceAccount that will be created by the
@@ -141,7 +146,7 @@ module "ack_ec2_pod_identity" {
 
   attach_custom_policy = true
   # TODO: narrow scope to only the EC2 actions we need
-  source_policy_documents = [data.aws_iam_policy_document.ack_ec2.json]
+  source_policy_documents = [data.aws_iam_policy_document.ack_ec2[0].json]
   additional_policy_arns = {
     AmazonEC2FullAccess = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
   }
