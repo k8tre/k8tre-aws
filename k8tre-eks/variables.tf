@@ -107,6 +107,12 @@ variable "additional_eks_addons" {
   description = "Map of additional EKS addons"
 }
 
+variable "create_pod_identities" {
+  type        = bool
+  default     = false
+  description = "Create additional EKS pod identities (EBS and EFS CSI and are always created)"
+}
+
 variable "hosted_zone_id" {
   type        = string
   default     = ""

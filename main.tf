@@ -190,7 +190,8 @@ module "k8tre-eks" {
   # autoupdate_ami = false
   # autoupdate_addons = false
 
-  hosted_zone_id = module.dnsresolver.private-zone-id
+  create_pod_identities = true
+  hosted_zone_id        = module.dnsresolver.private-zone-id
 
   github_oidc_rolename = "k8tre-dev-github-oidc"
 }
@@ -226,6 +227,7 @@ module "k8tre-argocd-eks" {
 
   # autoupdate_ami = false
   # autoupdate_addons = false
+  create_pod_identities = false
 
   argocd_create_role            = true
   argocd_assume_eks_access_role = module.k8tre-eks.eks_access_role
