@@ -35,6 +35,12 @@ variable "private_subnets" {
   ]
 }
 
+variable "allowed_cidrs" {
+  type        = list(string)
+  description = "CIDRs allowed to access K8TRE ('myip' is dynamically replaced by your current IP)"
+  default     = ["myip"]
+}
+
 
 terraform {
   required_providers {
@@ -82,7 +88,8 @@ data "http" "myip" {
 
 locals {
   allow_ips = [
-    "${chomp(data.http.myip.response_body)}/32",
+    for ip in var.allowed_cidrs :
+    replace(ip, "/^myip$/", "${chomp(data.http.myip.response_body)}/32")
   ]
 }
 
@@ -183,6 +190,9 @@ module "k8tre-eks" {
   # autoupdate_ami = false
   # autoupdate_addons = false
 
+  create_pod_identities = true
+  hosted_zone_id        = module.dnsresolver.private-zone-id
+
   github_oidc_rolename = "k8tre-dev-github-oidc"
 }
 
@@ -217,6 +227,7 @@ module "k8tre-argocd-eks" {
 
   # autoupdate_ami = false
   # autoupdate_addons = false
+  create_pod_identities = false
 
   argocd_create_role            = true
   argocd_assume_eks_access_role = module.k8tre-eks.eks_access_role

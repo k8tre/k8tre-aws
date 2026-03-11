@@ -13,12 +13,20 @@ data "terraform_remote_state" "k8tre" {
 variable "k8tre_cluster_labels" {
   type = map(string)
   default = {
-    environment  = "dev"
-    secret-store = "kubernetes"
-    vendor       = "aws"
-    skip-metallb = "true"
+    environment     = "dev"
+    secret-store    = "aws"
+    vendor          = "aws"
+    skip-metallb    = "true"
+    external-domain = "k8tre-dev.internal"
+    external-dns    = "aws"
   }
   description = "Argocd labels applied to K8TRE cluster"
+}
+
+variable "k8tre_cluster_label_overrides" {
+  type        = map(string)
+  default     = {}
+  description = "Additional labels merged with k8tre_cluster_labels and applied to K8TRE cluster"
 }
 
 variable "install_k8tre" {
@@ -37,6 +45,11 @@ variable "k8tre_github_ref" {
   type        = string
   default     = "main"
   description = "K8TRE git ref (commit/branch/tag)"
+}
+
+variable "efs_name" {
+  type        = string
+  description = "EFS name creation token, must match module.efs var.name"
 }
 
 # Cluster where K8TRE wil be deployed
