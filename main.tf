@@ -22,7 +22,6 @@ variable "public_subnets" {
   description = "Public subnet CIDRs to create"
   default = [
     "10.0.1.0/24", "10.0.2.0/24",
-    "10.0.9.0/24", "10.0.10.0/24",
   ]
 }
 
@@ -31,7 +30,6 @@ variable "private_subnets" {
   description = "Private subnet CIDRs to create"
   default = [
     "10.0.3.0/24", "10.0.4.0/24",
-    "10.0.11.0/24", "10.0.12.0/24",
   ]
 }
 
@@ -160,7 +158,7 @@ module "k8tre-eks" {
 
   cluster_name    = "k8tre-dev"
   vpc_id          = module.vpc.vpc_id
-  private_subnets = slice(module.vpc.private_subnets, 0, 2)
+  private_subnets = module.vpc.private_subnets
 
   # k8s_version =
 
@@ -207,7 +205,7 @@ module "k8tre-argocd-eks" {
 
   cluster_name    = "k8tre-dev-argocd"
   vpc_id          = module.vpc.vpc_id
-  private_subnets = slice(module.vpc.private_subnets, 2, 4)
+  private_subnets = module.vpc.private_subnets
 
   # k8s_version =
 
