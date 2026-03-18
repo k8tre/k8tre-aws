@@ -265,6 +265,11 @@ module "eks_nodegroup" {
   capacity_type = "ON_DEMAND"
   iam_role_additional_policies = {
     ssmcore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    # Cilium ENI requires these:
+    # https://cilium.io/blog/2025/06/19/eks-eni-install/
+    eksworker = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+    ekscni    = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+    ecr       = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   }
 }
 
