@@ -18,7 +18,7 @@ module "efs" {
   source  = "./efs"
   name    = var.efs_token
   vpc_id  = module.vpc.vpc_id
-  subnets = slice(module.vpc.private_subnets, 0, 2)
+  subnets = module.vpc.private_subnets
 }
 
 

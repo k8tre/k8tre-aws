@@ -26,12 +26,6 @@ variable "k8s_api_cidrs" {
   description = "CIDRs that have access to the K8s API"
 }
 
-variable "service_access_cidrs" {
-  type        = list(string)
-  default     = ["127.0.0.1/8"]
-  description = "CIDRs that have access to services running on K8s"
-}
-
 variable "additional_security_groups" {
   type        = list(string)
   default     = []
@@ -95,17 +89,11 @@ variable "autoupdate_ami" {
   description = "Whether to autoupdate the AMI version when Terraform is run"
 }
 
-variable "autoupdate_addons" {
-  type        = bool
-  default     = false
-  description = "Whether to autoupdate the versions of EKS addons when Terraform is run"
-}
-
-variable "additional_eks_addons" {
-  type        = map(any)
-  default     = {}
-  description = "Map of additional EKS addons"
-}
+# variable "autoupdate_addons" {
+#   type        = bool
+#   default     = false
+#   description = "Whether to autoupdate the versions of EKS addons when Terraform is run"
+# }
 
 variable "create_pod_identities" {
   type        = bool

@@ -41,19 +41,3 @@ resource "aws_security_group" "all_worker_mgmt" {
     ]
   }
 }
-
-# This is not used in any Terraform resource, but can be referenced in
-# Application load balancers deployed in EKS
-resource "aws_ec2_managed_prefix_list" "service-access-cidrs" {
-  name           = "${var.cluster_name}-service-access-cidrs"
-  address_family = "IPv4"
-  max_entries    = 20
-
-  dynamic "entry" {
-    for_each = var.service_access_cidrs
-    content {
-      cidr = entry.value
-      # description =
-    }
-  }
-}

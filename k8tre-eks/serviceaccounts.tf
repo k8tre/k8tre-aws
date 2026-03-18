@@ -24,7 +24,7 @@ module "eks_pod_identity_load_balancer" {
 
   associations = {
     cluster1 = {
-      cluster_name = var.cluster_name
+      cluster_name = module.eks.cluster_name
     }
   }
 }
@@ -61,7 +61,7 @@ module "cluster_autoscaler_pod_identity" {
 
   associations = {
     cluster1 = {
-      cluster_name = var.cluster_name
+      cluster_name = module.eks.cluster_name
     }
   }
 }
@@ -140,7 +140,7 @@ module "ack_ec2_pod_identity" {
 
   associations = {
     cluster1 = {
-      cluster_name = var.cluster_name
+      cluster_name = module.eks.cluster_name
     }
   }
 

@@ -1,6 +1,6 @@
 output "cluster_name" {
   description = "Kubernetes Cluster Name"
-  value       = var.cluster_name
+  value       = module.eks.cluster_name
 }
 
 output "cluster_oidc_issuer_url" {
@@ -29,11 +29,6 @@ output "cluster_ca_certificate" {
 output "eks_token" {
   description = "The EKS token"
   value       = data.aws_eks_cluster_auth.k8tre.token
-}
-
-output "service_access_cidrs_prefix_list" {
-  description = "ID of the prefix list that can access services running on K8s"
-  value       = aws_ec2_managed_prefix_list.service-access-cidrs.id
 }
 
 output "eks_access_role" {

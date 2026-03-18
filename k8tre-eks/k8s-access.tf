@@ -175,7 +175,7 @@ module "eks_pod_identity_argocd_access" {
   association_defaults = {
     # namespace       = var.argocd_namespace
     # service_account = item
-    cluster_name = var.cluster_name
+    cluster_name = module.eks.cluster_name
   }
 
   associations = {
