@@ -1,14 +1,13 @@
+variable "name" {
+  type        = string
+  description = "Name used for most resources"
+  default     = "k8tre-dev"
+}
 
 variable "region" {
   type        = string
   description = "AWS region"
   default     = "eu-west-2"
-}
-
-variable "vpc_name" {
-  type        = string
-  description = "EKS cluster name"
-  default     = "k8tre-dev"
 }
 
 variable "vpc_cidr" {
@@ -43,6 +42,12 @@ variable "additional_admin_principals" {
   type        = map(string)
   description = "Additional EKS admin principals"
   default     = {}
+}
+
+variable "efs_token" {
+  type        = string
+  description = "EFS name creation token"
+  default     = "k8tre-efs"
 }
 
 
@@ -106,7 +111,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "6.6.0"
 
-  name = var.vpc_name
+  name = var.name
   cidr = var.vpc_cidr
   # EKS requires at least two AZ (though node groups can be placed in just one)
   azs                = ["${var.region}a", "${var.region}b"]
@@ -162,7 +167,7 @@ module "k8tre-eks" {
   source = "./k8tre-eks"
   # source = "git::https://github.com/k8tre/k8tre-infrastructure-aws.git?ref=main"
 
-  cluster_name    = "k8tre-dev"
+  cluster_name    = var.name
   vpc_id          = module.vpc.vpc_id
   private_subnets = module.vpc.private_subnets
 
@@ -200,7 +205,7 @@ module "k8tre-eks" {
     module.dnsresolver.public-zone-id
   )
 
-  github_oidc_rolename = "k8tre-dev-github-oidc"
+  github_oidc_rolename = "${var.name}-github-oidc"
 
   additional_admin_principals = var.additional_admin_principals
 }
@@ -214,7 +219,7 @@ module "k8tre-argocd-eks" {
   source = "./k8tre-eks"
   # source = "git::https://github.com/k8tre/k8tre-infrastructure-aws.git?ref=main"
 
-  cluster_name    = "k8tre-dev-argocd"
+  cluster_name    = "${var.name}-argocd"
   vpc_id          = module.vpc.vpc_id
   private_subnets = module.vpc.private_subnets
 
@@ -255,9 +260,24 @@ output "kubeconfig_command_k8tre-argocd-dev" {
   value       = "aws eks update-kubeconfig --name ${module.k8tre-argocd-eks.cluster_name}"
 }
 
+output "name" {
+  description = "Name used for most resources"
+  value       = var.name
+}
+
+output "efs_token" {
+  description = "EFS name creation token"
+  value       = var.efs_token
+}
+
 output "service_access_prefix_list" {
   description = "ID of the prefix list that can access services running on K8s"
   value       = module.k8tre-eks.service_access_cidrs_prefix_list
+}
+
+output "vpc_cidr" {
+  description = "VPC CIDR"
+  value       = module.vpc.vpc_cidr_block
 }
 
 output "k8tre_cluster_name" {

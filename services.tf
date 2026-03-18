@@ -16,7 +16,7 @@ variable "create_public_zone" {
 
 module "efs" {
   source  = "./efs"
-  name    = "k8tre-efs"
+  name    = var.efs_token
   vpc_id  = module.vpc.vpc_id
   subnets = slice(module.vpc.private_subnets, 0, 2)
 }
