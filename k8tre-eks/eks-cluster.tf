@@ -95,7 +95,7 @@ module "eks" {
 # K8S Gateway CRDs: Cilium Helm chart detects whether Gateway CRDs are present
 
 data "http" "gateway_standard_crds" {
-  url = "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml"
+  url = "https://github.com/kubernetes-sigs/gateway-api/releases/download/v${gateway_api_version}/standard-install.yaml"
 }
 
 # Need to strip out status field
@@ -124,7 +124,7 @@ resource "helm_release" "cilium" {
   name       = "cilium"
   repository = "https://helm.cilium.io/"
   chart      = "cilium"
-  version    = "1.19.1"
+  version    = var.cilium_version
   namespace  = "kube-system"
 
   # Will fail because on the first run there are no nodes

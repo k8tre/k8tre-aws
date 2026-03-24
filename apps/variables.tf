@@ -29,6 +29,12 @@ variable "k8tre_cluster_label_overrides" {
   description = "Additional labels merged with k8tre_cluster_labels and applied to K8TRE cluster"
 }
 
+variable "argocd_version" {
+  type        = string
+  default     = "9.4.15"
+  description = "ArgoCD Helm chart version"
+}
+
 variable "install_k8tre" {
   type        = bool
   default     = true

@@ -150,3 +150,15 @@ variable "additional_admin_principals" {
   description = "Additional EKS admin pricipals"
   default     = {}
 }
+
+variable "gateway_api_version" {
+  type        = string
+  description = "Gateway API CRD version"
+  default     = "1.4.1"
+}
+
+variable "cilium_version" {
+  type        = string
+  description = "Cilium version"
+  default     = "1.19.1"
+}
