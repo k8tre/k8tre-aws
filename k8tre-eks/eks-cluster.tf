@@ -284,7 +284,7 @@ module "eks_nodegroup" {
 # Now that the nodegroup is ready we can deploy addons
 
 resource "aws_eks_addon" "coredns" {
-  count      = (var.deployment_stage > 1) ? 1 : 0
+  count      = (var.deployment_stage >= 1) ? 1 : 0
   depends_on = [module.eks_nodegroup]
 
   cluster_name                = module.eks.cluster_name
@@ -293,7 +293,7 @@ resource "aws_eks_addon" "coredns" {
 }
 
 resource "aws_eks_addon" "eks-pod-identity-agent" {
-  count      = (var.deployment_stage > 1) ? 1 : 0
+  count      = (var.deployment_stage >= 1) ? 1 : 0
   depends_on = [module.eks_nodegroup]
 
   cluster_name                = module.eks.cluster_name
@@ -302,7 +302,7 @@ resource "aws_eks_addon" "eks-pod-identity-agent" {
 }
 
 resource "aws_eks_addon" "aws-ebs-csi-driver" {
-  count      = (var.deployment_stage > 1) ? 1 : 0
+  count      = (var.deployment_stage >= 1) ? 1 : 0
   depends_on = [module.eks_nodegroup]
 
   cluster_name                = module.eks.cluster_name
@@ -316,7 +316,7 @@ resource "aws_eks_addon" "aws-ebs-csi-driver" {
 }
 
 resource "aws_eks_addon" "aws-efs-csi-driver" {
-  count      = (var.deployment_stage > 1) ? 1 : 0
+  count      = (var.deployment_stage >= 1) ? 1 : 0
   depends_on = [module.eks_nodegroup]
 
   cluster_name                = module.eks.cluster_name
