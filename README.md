@@ -18,7 +18,7 @@ cd ..
 
 ## Deploy Amazon Elastic Kubernetes Service (EKS)
 
-By default this 3will deploy two EKS clusters:
+By default this will deploy two EKS clusters:
 
 - `k8tre-dev-argocd` is where ArgoCD will run
 - `k8tre-dev` is where K8TRE will be deployed
@@ -27,47 +27,60 @@ IAM roles and pod identities are setup to allow ArgoCD running in the `k8tre-dev
 
 ### Configuration
 
-Edit [`main.tf`](main.tf).
-You must modify `terraform.backend.s3` `bucket` to match the one in `bootstrap/backend.tf`, and you may want to modify the configuration of `module.k8tre-eks`.
+Edit [`provider.tf`](provider.tf).
+You must modify `terraform.backend.s3` `bucket` to match the one in `bootstrap/backend.tf`.
 
-If you want to deploy ArgoCD in the same cluster as K8TRE delete
-
-- `module.k8tre-argocd-eks`
-- `output.kubeconfig_command_k8tre-argocd-dev`
+You can install K8TRE AWS with no changes, but you will most likely want to set some variables.
+Either modify [`variables.tf`](variables.tf), or copy [`overrides.tfvars-example`](overrides.tfvars-example) to `overrides.tfvars` and edit.
 
 ### Run Terraform
 
-Activate your AWS credentials in your shell environment, then:
+Activate your AWS credentials in your shell environment.
+Terraform must be applied in several stages.
+This is because Terraform needs to resolve some resources before running, but some of these resources don't initially exist.
+
+Initialise Terraform providers and modules:
 
 ```sh
 terraform init
-terraform apply
 ```
 
-If there's a timeout run
+Deploy the EKS cluster control plane, a Route 53 Private Zone, and EFS:
 
 ```sh
-terraform apply
+terraform apply -var-file=overrides.tfvars -var deployment_stage=0
 ```
 
-again.
+Deploy EKS compute nodes, and Cilium:
+
+```sh
+terraform apply -var-file=overrides.tfvars -var deployment_stage=1
+```
+
+Deploy ArgoCD and some other prerequisites:
+
+```sh
+terraform apply -var-file=overrides.tfvars -var deployment_stage=2
+```
+
+Deploy K8TRE
+
+```sh
+terraform apply -var-file=overrides.tfvars -var deployment_stage=3
+```
+
+If any commands file or timeout try rerunning them.
 
 ### Kubernetes access
 
 `terraform apply` should display the command to create a [kubeconfig file](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) for the `k8tre-dev` and `k8tre-dev-argocd` clusters.
 
-### Install K8TRE prerequisites and ArgoCD
+### ArgoCD access
 
-The `apps` directory will install some Kubernetes prerequisites for K8TRE, as well as setting up ArgoCD.
-If you prefer you can set everything up manually following the [K8TRE documentation](https://github.com/k8tre/k8tre/blob/main/docs/development/k3s-dev.md#setup-argocd).
+For convenience you can run the [`./argocd-portforward.sh`](`argocd-portforward.sh`) to start a port-forward to the ArgoCD web interface.
+Open http://localhost:8080 in your browser and login with username `admin` nd the password displayed by the script.
 
-Edit [`apps/variables.tf`](apps/variables.tf):
-
-- Modify `terraform.backend.s3` `bucket` to match the one in `bootstrap/backend.tf`.
-- Change the `data.terraform_remote_state.k8tre` section to match the `backend.s3` section in `main.tf`.
-  This allows the ArgoCD terraform to automatically lookup up the EKS details without needing to specify everything manually.
-- By default this will also install the K8TRE ArgoCD root-app-of-apps.
-  Set `install_k8tre = false` to disable this.
+If any Applications are not healthy check them, and if necessary try forcing a sync, or forcing broken resources to be recreated.
 
 ## Things to note
 
@@ -78,12 +91,7 @@ The cluster has a single EKS node group in a single subnet (single availability 
 If you require multi-AZ high-availability you will need to modify this.
 
 A prefix list `${var.cluster_name}-service-access-cidrs` is provided for convenience
-This is not used in any Terraform resource, but can be referenced in Application load balancers deployed in EKS
-
-## Optional wildcard certificate (not currently automated)
-
-To simplify certificate management in K8TRE you can optionally create a wildcard public certificate using [Amazon Certificate Manager](https://docs.aws.amazon.com/acm/latest/userguide/acm-public-certificates.html).
-This certificate can then be used in AWS load balancers provisioned by K8TRE without further configuration.
+This is not used in any Terraform resource, but can be referenced in other resources such as Application load balancers deployed in EKS.
 
 ## Developer notes
 
@@ -102,10 +110,9 @@ When making changes to this repository run:
 ```sh
 terraform validate
 terraform fmt -recursive
+
+tflint --init
 tflint --recursive
-npx prettier@3.6.2 --write '**/*.{yaml,yml,md}'
+
+npx prettier@3.8.1 --write '**/*.{yaml,yml,md}'
 ```
-
-### Configuring K8TRE
-
-Set the required labels using `k8tre_cluster_label_overrides` in `apps/variables.tf`

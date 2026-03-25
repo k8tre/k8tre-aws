@@ -1,7 +1,7 @@
 
 variable "deployment_stage" {
   type        = number
-  default     = 1
+  default     = 3
   description = <<EOT
   Multi-stage deployment step.
   This is necessary because Terraform needs to resolve some resources before
