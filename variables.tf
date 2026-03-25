@@ -95,9 +95,11 @@ variable "k8tre_cluster_labels" {
     secret-store = "aws"
     vendor       = "aws"
     skip-metallb = "true"
-    # Defaults to var.dns_domain
-    # external-domain
     external-dns = "aws"
+    # These are automatically set from other variables:
+    # cluster-name
+    # external-domain
+    # region
   }
   description = "Argocd labels applied to K8TRE cluster"
 }

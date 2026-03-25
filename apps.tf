@@ -91,9 +91,19 @@ resource "kubernetes_config_map" "cmp_plugin" {
         generate:
           command: [sh, -c]
           args:
-            - |
-              kustomize build --enable-helm --load-restrictor LoadRestrictionsNone . | \
-              sed "s/\$${ENVIRONMENT}/$${ARGOCD_ENV_ENVIRONMENT}/g; s/\$${DOMAIN}/$${ARGOCD_ENV_DOMAIN}/g; s/\\.ENVIRONMENT\\./.$${ARGOCD_ENV_ENVIRONMENT}./g; s/\\.DOMAIN/.$${ARGOCD_ENV_DOMAIN}/g; s/^ENVIRONMENT$/$${ARGOCD_ENV_ENVIRONMENT}/g; s/^DOMAIN$/$${ARGOCD_ENV_DOMAIN}/g"
+            - >-
+              kustomize build --enable-helm --load-restrictor LoadRestrictionsNone . |
+                sed "
+                  s/\$${ENVIRONMENT}/$${ARGOCD_ENV_ENVIRONMENT}/g;
+                  s/\$${DOMAIN}/$${ARGOCD_ENV_DOMAIN}/g;
+                  s/\\.ENVIRONMENT\\./.$${ARGOCD_ENV_ENVIRONMENT}./g;
+                  s/\\.DOMAIN/.$${ARGOCD_ENV_DOMAIN}/g;
+                  s/^ENVIRONMENT$/$${ARGOCD_ENV_ENVIRONMENT}/g;
+                  s/^DOMAIN$/$${ARGOCD_ENV_DOMAIN}/g;
+
+                  s/\$${CLUSTER_NAME}/$${ARGOCD_ENV_CLUSTER_NAME}/g;
+                  s/\$${REGION}/$${ARGOCD_ENV_REGION}/g;
+                "
     EOT
   }
 
@@ -197,7 +207,11 @@ resource "kubernetes_secret" "argocd-cluster-k8tre-dev" {
     labels = merge(
       { "argocd.argoproj.io/secret-type" = "cluster" },
       var.k8tre_cluster_labels,
-      { "external-domain" : var.dns_domain },
+      {
+        "cluster-name" : module.k8tre-eks.cluster_name,
+        "external-domain" : var.dns_domain,
+        "region" : var.region,
+      },
       var.k8tre_cluster_label_overrides,
     )
   }
