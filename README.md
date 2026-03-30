@@ -10,7 +10,7 @@ You must first create a S3 bucket to store the [Terraform state file](https://de
 Activate your AWS credentials in your shell environment, edit the `resource.aws_s3_bucket.bucket` `bucket` name in [`bootstrap/backend.tf`](bootstrap/backend.tf), then:
 
 ```sh
-cd backend
+cd bootstrap
 terraform init
 terraform apply
 cd ..
@@ -70,6 +70,15 @@ terraform apply -var-file=overrides.tfvars -var deployment_stage=3
 ```
 
 If any commands file or timeout try rerunning them.
+
+### K8TRE secrets
+
+K8TRE requires several secrets in AWS SSM, such as credentials for applications.
+You can use the `create-ci-secrets.py` script in the K8TRE repository to create them:
+
+```sh
+uv run create-ci-secrets.py --backend aws-ssm --region eu-west-2
+```
 
 ### Kubernetes access
 
