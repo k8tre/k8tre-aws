@@ -36,6 +36,14 @@ module "dnsresolver" {
     # ["proxy", "CNAME", "squid-proxy.${var.dns_domain}"],
   ]
 
+  private-records = {
+    "_ldap._tcp.gc._msdcs.ad SRV" = ["0 100 3268 dc0.ad.${var.dns_domain}"]
+    "_kerberos._tcp.ad SRV"       = ["0 100 88 dc0.ad.${var.dns_domain}"]
+    "_kerberos._udp.ad SRV"       = ["0 100 88 dc0.ad.${var.dns_domain}"]
+    "_ldap._tcp.ad SRV"           = ["0 100 389 dc0.ad.${var.dns_domain}"]
+    "_ldap._udp.ad SRV"           = ["0 100 389 dc0.ad.${var.dns_domain}"]
+  }
+
   # For now allow all since K8TRE is fetching external images and code
   allowed_domains = ["*."]
 
