@@ -47,10 +47,14 @@ variable "cluster_security_group_additional_rules" {
 
 variable "number_azs" {
   type = number
-  # Use just one so we don't have to deal with node/volume affinity-
+  # Default to just one so we don't have to deal with node/volume affinity-
   # can't use EBS volumes across AZs
   default     = 1
   description = "Number of AZs to use"
+  validation {
+    condition     = var.number_azs >= 0 && var.number_azs <= length(var.private_subnets)
+    error_message = "number_azs must be > 0 and <= number of private_subnets"
+  }
 }
 
 variable "instance_type_wg1" {

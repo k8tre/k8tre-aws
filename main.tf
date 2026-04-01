@@ -111,7 +111,8 @@ module "k8tre-eks" {
     allow_argocd_k8s_access = local.allow_argocd_k8s_access
   }
 
-  # number_azs        = 1
+  number_azs = var.number_availability_zones
+
   # instance_type_wg1 = "t3a.2xlarge"
   # use_bottlerocket  = false
   root_volume_size = 200
@@ -158,7 +159,8 @@ module "k8tre-argocd-eks" {
 
   additional_security_groups = [aws_security_group.internal_cluster_access.id]
 
-  # number_azs        = 1
+  number_azs = var.number_availability_zones
+
   instance_type_wg1 = "t3a.xlarge"
   # use_bottlerocket  = false
   # root_volume_size = 100

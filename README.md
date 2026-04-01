@@ -37,6 +37,8 @@ Particularly important variables include
 
 - `dns_domain`: The domain for K8TRE
 - `request_certificate`: K8TRE requires a HTTPS certificate to be stored in AWS ACM.
+- `number_availability_zones`: By default the deployed clusters run in a single availability zone to make it easier to deal with `ReadWriteOnce` persistent volumes which are backed by EBS volumes, which are tied to a single AZ.
+  Increasing this provides more resilience to AWS outages, at the expense of needing more nodes in all AZs since once an EBS volume for a pod has been provisioned that pod can only ever be run in that AZ.
 
 ### Run Terraform
 

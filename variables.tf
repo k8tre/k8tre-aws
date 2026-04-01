@@ -50,6 +50,17 @@ variable "private_subnets" {
   ]
 }
 
+variable "number_availability_zones" {
+  type        = number
+  default     = 1
+  description = <<-EOT
+  Number of availability zones to use for EKS.
+  EBS volumes are tied to a single AZ, so if you have multiple AZs you must
+  ensure you always have sufficient nodes in all AZs to run all pods
+  that use EBS.
+  EOT
+}
+
 variable "allowed_cidrs" {
   type        = list(string)
   description = "CIDRs allowed to access K8TRE ('myip' is dynamically replaced by your current IP)"
