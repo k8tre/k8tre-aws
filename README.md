@@ -98,6 +98,8 @@ Open http://localhost:8080 in your browser and login with username `admin` nd th
 
 If any Applications are not healthy check them, and if necessary try forcing a sync, or forcing broken resources to be recreated.
 
+![K8TRE deployment overview](docs/k8tre-aws-infra-account.drawio.svg)
+
 ## Things to note
 
 EKS is deployed in a private subnet, with NAT gateway to a public subnet
@@ -108,6 +110,16 @@ If you require multi-AZ high-availability you will need to modify this.
 
 A prefix list `${var.cluster_name}-service-access-cidrs` is provided for convenience
 This is not used in any Terraform resource, but can be referenced in other resources such as Application load balancers deployed in EKS.
+
+## AWS Organisation
+
+This repository only manages the K8TRE infrastructure for a single AWS account.
+We strongly recommend you setup a multi-account AWS Organisation, for example using [AWS Control Tower](https://aws.amazon.com/controltower/) or [Landing Zone Accelerator on AWS](https://aws.amazon.com/solutions/implementations/landing-zone-accelerator-on-aws/).
+
+This organisation should include monitoring and security tools, either using AWS services or a third party alternative.
+
+For example:
+![Example K8TRE AWS organisation](docs/k8tre-aws-infra-organisation.drawio.svg)
 
 ## Developer notes
 
