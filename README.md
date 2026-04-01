@@ -36,7 +36,7 @@ Either modify [`variables.tf`](variables.tf), or copy [`overrides.tfvars-example
 Particularly important variables include
 
 - `dns_domain`: The domain for K8TRE
-- `request_certificate`: K8TRE requires a HTTPS certificate to be stored in AWS ACM.
+- `request_certificate`: K8TRE requires a HTTPS certificate to be stored in AWS ACM, set this to `acm` to request a proper certificate instead of using a self-signed one.
 - `number_availability_zones`: By default the deployed clusters run in a single availability zone to make it easier to deal with `ReadWriteOnce` persistent volumes which are backed by EBS volumes, which are tied to a single AZ.
   Increasing this provides more resilience to AWS outages, at the expense of needing more nodes in all AZs since once an EBS volume for a pod has been provisioned that pod can only ever be run in that AZ.
 
@@ -52,11 +52,13 @@ Initialise Terraform providers and modules:
 terraform init
 ```
 
-Deploy the EKS cluster control plane, a Route 53 Private Zone, and EFS:
+Deploy the EKS cluster control plane, a Route 53 Private Zone, EFS, and HTTPS certificate:
 
 ```sh
 terraform apply -var-file=overrides.tfvars -var deployment_stage=0
 ```
+
+If you set `request_certificate = "acm"` then [create the DNS validation records](https://docs.aws.amazon.com/acm/latest/userguide/dns-validation.html) shown in the output.
 
 Deploy EKS compute nodes, and Cilium:
 
@@ -98,15 +100,19 @@ Open http://localhost:8080 in your browser and login with username `admin` nd th
 
 If any Applications are not healthy check them, and if necessary try forcing a sync, or forcing broken resources to be recreated.
 
+## K8TRE deploymenet overview
+
 ![K8TRE deployment overview](docs/k8tre-aws-infra-account.drawio.svg)
 
-## Things to note
+This deployment requires you to have administative access to an AWS Account, but assumes your AWS organisation and your DNS infrastructure are managed by a separate entity from the one deploying K8TRE.
 
-EKS is deployed in a private subnet, with NAT gateway to a public subnet
-A [GitHub OIDC role](https://docs.github.com/en/actions/concepts/security/openid-connect) can optionally be created.
+It does not attempt to configure anything outside this single AWS account, nor does it configure any public DNS.
+We recommend you use an [ACM managed public certificate](https://docs.aws.amazon.com/acm/latest/userguide/acm-public-certificates.html).
+This deployment can request a certificate for you, but you must setup the DNS validation records yourself.
+Once this is done you can proceed with deploying K8TRE, and the internal Application Load Balancer created by K8TRE should automatically use the certfiicate.
 
-The cluster has a single EKS node group in a single subnet (single availability zone) to reduce costs, and to avoid multi-AZ storage.
-If you require multi-AZ high-availability you will need to modify this.
+EKS is deployed in a private subnet, with NAT gateway to a public subnet.
+By default the cluster has a single EKS node group in a single subnet (single availability zone) to reduce costs, and to avoid multi-AZ storage.
 
 A prefix list `${var.cluster_name}-service-access-cidrs` is provided for convenience
 This is not used in any Terraform resource, but can be referenced in other resources such as Application load balancers deployed in EKS.
