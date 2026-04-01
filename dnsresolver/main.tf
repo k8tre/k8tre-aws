@@ -28,6 +28,15 @@ resource "aws_route53_record" "public-record" {
   records = each.value
 }
 
+resource "aws_route53_record" "private-record" {
+  for_each = var.private-records
+
+  zone_id = aws_route53_zone.private-zone.zone_id
+  name    = format("%s.%s", split(" ", each.key)[0], var.name)
+  type    = split(" ", each.key)[1]
+  ttl     = 300
+  records = each.value
+}
 
 ######################################################################
 # Private zone

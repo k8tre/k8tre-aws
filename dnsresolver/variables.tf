@@ -77,3 +77,14 @@ variable "public-records" {
   EOF
   default     = {}
 }
+
+variable "private-records" {
+  type        = map(list(string))
+  description = <<EOF
+    "map of {'<name> <type>' => [destinations]}"
+    e.g.
+      "dev-a A" = ["192.0.2.3"]
+      "dev-cname CNAME" = ["foo.example.org"]
+  EOF
+  default     = {}
+}
