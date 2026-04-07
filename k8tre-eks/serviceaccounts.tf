@@ -104,9 +104,10 @@ module "external_secrets_pod_identity" {
 
   associations = {
     cluster1 = {
-      cluster_name    = module.eks.cluster_name
-      namespace       = "external-secrets"
-      service_account = "external-secrets-sa"
+      cluster_name = module.eks.cluster_name
+      namespace    = "external-secrets"
+      # Must match account referenced in K8TRE external-secrets
+      service_account = "external-secrets"
     }
   }
 }
