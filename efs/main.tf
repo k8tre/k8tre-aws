@@ -32,6 +32,7 @@ resource "aws_security_group" "efs_sg" {
 resource "aws_efs_file_system" "efs" {
   creation_token = var.name
   encrypted      = true
+  kms_key_id     = var.kms_key_arn
 
   tags = {
     Name = var.name
@@ -47,34 +48,3 @@ resource "aws_efs_mount_target" "mount" {
   security_groups = [aws_security_group.efs_sg.id]
 }
 
-
-
-# data "aws_caller_identity" "current" {}
-# data "aws_region" "current" {}
-
-# resource "aws_kms_key" "efs" {
-#   description             = "${var.name} KMS Key"
-#   deletion_window_in_days = 30
-#   enable_key_rotation     = true
-
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Id      = "EFS"
-#     Statement = [
-#       {
-#         Sid    = "Enable IAM User Permissions"
-#         Effect = "Allow"
-#         Principal = {
-#           AWS = format("arn:aws:iam::%s:root", data.aws_caller_identity.current.account_id)
-#         }
-#         Action   = "kms:*"
-#         Resource = "*"
-#       }
-#     ]
-#   })
-# }
-
-# resource "aws_kms_alias" "efs" {
-#   name          = "alias/${var.name}/efs"
-#   target_key_id = aws_kms_key.efs.key_id
-# }

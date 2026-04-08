@@ -1,3 +1,34 @@
+######################################################################
+# Storage encryption key
+
+data "aws_caller_identity" "current" {}
+
+resource "aws_kms_key" "default-storage" {
+  description             = "${var.name} default storage key"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Root IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = format("arn:aws:iam::%s:root", data.aws_caller_identity.current.account_id)
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_kms_alias" "default-storage" {
+  name          = "alias/${var.name}/default-storage"
+  target_key_id = aws_kms_key.default-storage.key_id
+}
+
 
 ######################################################################
 # EFS
@@ -7,10 +38,11 @@ locals {
 }
 
 module "efs" {
-  source  = "./efs"
-  name    = local.efs_token
-  vpc_id  = module.vpc.vpc_id
-  subnets = module.vpc.private_subnets
+  source      = "./efs"
+  name        = local.efs_token
+  vpc_id      = module.vpc.vpc_id
+  subnets     = module.vpc.private_subnets
+  kms_key_arn = aws_kms_key.default-storage.arn
 }
 
 
