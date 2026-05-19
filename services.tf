@@ -67,6 +67,15 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "studydata" {
 
 
 ######################################################################
+# Bucket for storing configuration
+
+resource "aws_s3_bucket" "services-config" {
+  bucket_prefix = "${var.name}-config-"
+  force_destroy = true
+}
+
+
+######################################################################
 # DNS
 
 module "dnsresolver" {
@@ -115,4 +124,23 @@ module "certificate" {
   subject_alternative_names = [var.dns_domain]
 
   request_acm_certificate = var.request_certificate == "acm" ? true : false
+}
+
+
+######################################################################
+# Transparent proxy
+
+module "transparent-proxy" {
+  count = var.require_outbound_proxy ? 1 : 0
+
+  source                           = "./transparent-proxy"
+  name                             = var.name
+  vpc_id                           = module.vpc.vpc_id
+  vpc_cidr                         = module.vpc.vpc_cidr_block
+  public_subnet                    = module.vpc.public_subnets[0]
+  private_subnet_route_table_ids   = module.vpc.private_route_table_ids
+  private_subnet_route_table_cidrs = var.outbound_proxy_cidrs
+
+  s3_config_bucket = aws_s3_bucket.services-config.id
+  allowed_domains  = var.outbound_proxy_allowed_domains
 }

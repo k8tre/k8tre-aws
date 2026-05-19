@@ -186,6 +186,7 @@ prek (or pre-commit) will run some autoformatters, and TFlint.
 | <a name="module_efs"></a> [efs](#module\_efs) | ./efs | n/a |
 | <a name="module_k8tre-argocd-eks"></a> [k8tre-argocd-eks](#module\_k8tre-argocd-eks) | ./k8tre-eks | n/a |
 | <a name="module_k8tre-eks"></a> [k8tre-eks](#module\_k8tre-eks) | ./k8tre-eks | n/a |
+| <a name="module_transparent-proxy"></a> [transparent-proxy](#module\_transparent-proxy) | ./transparent-proxy | n/a |
 | <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | 6.6.0 |
 
 ### Inputs
@@ -209,10 +210,13 @@ prek (or pre-commit) will run some autoformatters, and TFlint.
 | <a name="input_k8tre_github_repo"></a> [k8tre\_github\_repo](#input\_k8tre\_github\_repo) | K8TRE GitHub organisation and repository to install | `string` | `"k8tre/k8tre"` | no |
 | <a name="input_name"></a> [name](#input\_name) | Name used for most resources | `string` | `"k8tre-dev"` | no |
 | <a name="input_number_availability_zones"></a> [number\_availability\_zones](#input\_number\_availability\_zones) | Number of availability zones to use for EKS.<br/>EBS volumes are tied to a single AZ, so if you have multiple AZs you must<br/>ensure you always have sufficient nodes in all AZs to run all pods<br/>that use EBS. | `number` | `1` | no |
+| <a name="input_outbound_proxy_allowed_domains"></a> [outbound\_proxy\_allowed\_domains](#input\_outbound\_proxy\_allowed\_domains) | n/a | `list(string)` | <pre>[<br/>  ".amazonaws.com",<br/>  ".docker.com",<br/>  ".docker.io",<br/>  ".ghcr.io",<br/>  ".github.com"<br/>]</pre> | no |
+| <a name="input_outbound_proxy_cidrs"></a> [outbound\_proxy\_cidrs](#input\_outbound\_proxy\_cidrs) | Traffic for these CIDRs will be directed through the proxy | `list(string)` | <pre>[<br/>  "0.0.0.0/0"<br/>]</pre> | no |
 | <a name="input_private_subnets"></a> [private\_subnets](#input\_private\_subnets) | Private subnet CIDRs to create. These IPs are used by EKS pods so make it large! | `list(string)` | <pre>[<br/>  "10.0.64.0/18",<br/>  "10.0.128.0/18"<br/>]</pre> | no |
 | <a name="input_public_subnets"></a> [public\_subnets](#input\_public\_subnets) | Public subnet CIDRs to create | `list(string)` | <pre>[<br/>  "10.0.1.0/24",<br/>  "10.0.2.0/24"<br/>]</pre> | no |
 | <a name="input_region"></a> [region](#input\_region) | AWS region | `string` | `"eu-west-2"` | no |
 | <a name="input_request_certificate"></a> [request\_certificate](#input\_request\_certificate) | Request an ACM certificate (requires manual DNS validation),<br/>create a self-signed certificate,<br/>or none (fully manage certificate yourself) | `string` | `"selfsigned"` | no |
+| <a name="input_require_outbound_proxy"></a> [require\_outbound\_proxy](#input\_require\_outbound\_proxy) | Block default egress at the VPC level, deploy Squid proxy | `bool` | `false` | no |
 | <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | VPC CIDR to create | `string` | `"10.0.0.0/16"` | no |
 
 ### Outputs

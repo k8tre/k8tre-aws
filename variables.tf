@@ -96,6 +96,30 @@ variable "enable_github_oidc" {
   default     = false
 }
 
+variable "require_outbound_proxy" {
+  type        = bool
+  description = "Block default egress at the VPC level, deploy Squid proxy"
+  default     = false
+}
+
+variable "outbound_proxy_cidrs" {
+  type        = list(string)
+  description = "Traffic for these CIDRs will be directed through the proxy"
+  default     = ["0.0.0.0/0"]
+}
+
+variable "outbound_proxy_allowed_domains" {
+  type = list(string)
+  default = [
+    ".amazonaws.com",
+    # https://docs.docker.com/desktop/setup/allow-list/
+    ".docker.com",
+    ".docker.io",
+    ".ghcr.io",
+    ".github.com",
+  ]
+}
+
 
 
 variable "dns_domain" {
