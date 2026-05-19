@@ -101,9 +101,7 @@ module "certificate" {
 module "cluster" {
   source           = "./ecs-cluster"
   name             = "squid-proxy"
-  vpc_id           = module.vpc.vpc_id
   vpc_r53_id       = module.vpc.vpc_id
-  subnets          = slice(module.vpc.public_subnets, 0, 2)
   discovery_domain = "ecs.${var.dns_domain}"
 }
 

@@ -173,10 +173,12 @@ prek (or pre-commit) will run some autoformatters, and TFlint.
 | Name | Source | Version |
 |------|--------|---------|
 | <a name="module_certificate"></a> [certificate](#module\_certificate) | ./certificate | n/a |
+| <a name="module_cluster"></a> [cluster](#module\_cluster) | ./ecs-cluster | n/a |
 | <a name="module_dnsresolver"></a> [dnsresolver](#module\_dnsresolver) | ./dnsresolver | n/a |
 | <a name="module_efs"></a> [efs](#module\_efs) | ./efs | n/a |
 | <a name="module_k8tre-argocd-eks"></a> [k8tre-argocd-eks](#module\_k8tre-argocd-eks) | ./k8tre-eks | n/a |
 | <a name="module_k8tre-eks"></a> [k8tre-eks](#module\_k8tre-eks) | ./k8tre-eks | n/a |
+| <a name="module_squid"></a> [squid](#module\_squid) | ./proxy | n/a |
 | <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | 6.6.0 |
 
 ### Inputs
