@@ -34,7 +34,7 @@ variable "s3_config_bucket" {
   description = "An existing S3 bucket name used for storing config files"
 }
 
-variable "allowed_domains" {
+variable "allowed_domains_re" {
   type        = list(string)
   default     = []
   description = "Allowed domains (HTTP and HTTPS)"

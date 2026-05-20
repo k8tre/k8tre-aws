@@ -108,16 +108,44 @@ variable "outbound_proxy_cidrs" {
   default     = ["0.0.0.0/0"]
 }
 
-variable "outbound_proxy_allowed_domains" {
-  type = list(string)
+variable "default_outbound_proxy_allowed_domains_re" {
+  type        = list(string)
+  description = "Allow outgoing http/https to these domains by default"
   default = [
-    ".amazonaws.com",
+    "amazonaws\\.com$",
+    # Maybe tighten to eks-auth.eu-west-2.api.aws?
+    "api\\.aws$",
     # https://docs.docker.com/desktop/setup/allow-list/
-    ".docker.com",
-    ".docker.io",
-    ".ghcr.io",
-    ".github.com",
+    "docker\\.com$",
+    "docker\\.io$",
+    "ghcr\\.io$",
+    "quay\\.io$",
+    # Mostly related to K8s manifests and Helm charts, ordered by TLD
+    "external-secrets\\.io$",
+    "charts\\.external-secrets\\.io$",
+    "aws\\.github\\.io$",
+    "codecentric\\.github\\.io$",
+    "jupyterhub\\.github\\.io$",
+    "kubernetes\\.github\\.io$",
+    "kubernetes-sigs\\.github\\.io$",
+    "lsc-sde\\.github\\.io$",
+    "github\\.com$",
+    "pkg-containers\\.githubusercontent\\.com$",
+    "raw\\.githubusercontent\\.com$",
+    "release-assets\\.githubusercontent\\.com$",
+    "dl\\.gitea\\.com$",
+    "charts\\.jetstack\\.io$",
+    "hub\\.jupyter\\.org$",
+    "www\\.manicstreetpreacher\\.co\\.uk$",
+    # Probably runtime of something installation?
+    "dl-cdn\\.alpinelinux\\.org$",
   ]
+}
+
+variable "additional_outbound_proxy_allowed_domains_re" {
+  type        = list(string)
+  description = "Allow outgoing http/https to these domains in addition to default_outbound_proxy_allowed_domains_re"
+  default     = []
 }
 
 
