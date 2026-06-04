@@ -184,6 +184,7 @@ prek (or pre-commit) will run some autoformatters, and TFlint.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_additional_admin_principals"></a> [additional\_admin\_principals](#input\_additional\_admin\_principals) | Additional EKS admin principals | `map(string)` | `{}` | no |
+| <a name="input_additional_k8s_manifests"></a> [additional\_k8s\_manifests](#input\_additional\_k8s\_manifests) | List of paths to additional K8s manifests (one per file, multidoc YAML files are not supported) | `list(string)` | `[]` | no |
 | <a name="input_allowed_cidrs"></a> [allowed\_cidrs](#input\_allowed\_cidrs) | CIDRs allowed to access K8TRE ('myip' is dynamically replaced by your current IP) | `list(string)` | <pre>[<br/>  "myip"<br/>]</pre> | no |
 | <a name="input_argocd_version"></a> [argocd\_version](#input\_argocd\_version) | ArgoCD Helm chart version | `string` | `"9.4.15"` | no |
 | <a name="input_create_public_zone"></a> [create\_public\_zone](#input\_create\_public\_zone) | Create public DNS zone | `bool` | `false` | no |
