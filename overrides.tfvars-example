@@ -23,3 +23,7 @@ k8tre_cluster_label_overrides = {
 
 k8tre_github_repo = "manics/k8tre"
 k8tre_github_ref  = "aws-dev"
+
+additional_k8s_manifests = [
+#  "/path/to/additional/k8s-manifests.yaml"
+]

@@ -257,3 +257,17 @@ resource "kubernetes_manifest" "argocd-root-app-of-apps" {
 
   provider = kubernetes.k8tre-dev-argocd
 }
+
+locals {
+  additional_k8s_manifests = (var.deployment_stage >= 3) ? toset(var.additional_k8s_manifests) : toset([])
+}
+
+resource "kubernetes_manifest" "additional-argocd-app" {
+  for_each = local.additional_k8s_manifests
+
+  manifest = yamldecode(file(each.value))
+
+  depends_on = [helm_release.argocd]
+
+  provider = kubernetes.k8tre-dev-argocd
+}

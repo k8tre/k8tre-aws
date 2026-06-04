@@ -158,3 +158,9 @@ variable "k8tre_github_ref" {
   default     = "main"
   description = "K8TRE git ref (commit/branch/tag)"
 }
+
+variable "additional_k8s_manifests" {
+  type        = list(string)
+  default     = []
+  description = "List of paths to additional K8s manifests (one per file, multidoc YAML files are not supported)"
+}
