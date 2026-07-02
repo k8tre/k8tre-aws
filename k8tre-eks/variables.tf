@@ -172,3 +172,13 @@ variable "cilium_version" {
   description = "Cilium version"
   default     = "1.19.2"
 }
+
+######################################################################
+# Terraform module versions
+
+variable "module_eks_pod_identity_version" {
+  type        = string
+  description = "AWS EKS Pod Identity module version"
+  default     = "2.8.1"
+  const       = true
+}

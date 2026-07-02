@@ -21,7 +21,7 @@ terraform {
     }
   }
 
-  required_version = ">= 1.10.0"
+  required_version = ">= 1.15.0"
 
   # Bootstrapping: Create the bucket using the ./bootstrap directory
   # Must match aws_s3_bucket.bucket in bootstrap/backend.tf

@@ -160,7 +160,7 @@ module "eks_pod_identity_argocd_access" {
   count = var.argocd_create_role ? 1 : 0
 
   source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "2.7.0"
+  version = var.module_eks_pod_identity_version
   name    = "${var.cluster_name}-argocd"
 
   # attach_custom_policy      = true
