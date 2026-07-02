@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # A helper script to setup ArgoCD portforward
 set -eu
 
