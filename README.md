@@ -171,7 +171,7 @@ prek (or pre-commit) will run some autoformatters, and TFlint.
 ### Modules
 
 | Name | Source | Version |
-|------|--------|---------|
+| ---- | ------ | ------- |
 | <a name="module_certificate"></a> [certificate](#module\_certificate) | ./certificate | n/a |
 | <a name="module_dnsresolver"></a> [dnsresolver](#module\_dnsresolver) | ./dnsresolver | n/a |
 | <a name="module_efs"></a> [efs](#module\_efs) | ./efs | n/a |
@@ -182,7 +182,7 @@ prek (or pre-commit) will run some autoformatters, and TFlint.
 ### Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_additional_admin_principals"></a> [additional\_admin\_principals](#input\_additional\_admin\_principals) | Additional EKS admin principals | `map(string)` | `{}` | no |
 | <a name="input_additional_k8s_manifests"></a> [additional\_k8s\_manifests](#input\_additional\_k8s\_manifests) | List of paths to additional K8s manifests (one per file, multidoc YAML files are not supported) | `list(string)` | `[]` | no |
 | <a name="input_allowed_cidrs"></a> [allowed\_cidrs](#input\_allowed\_cidrs) | CIDRs allowed to access K8TRE ('myip' is dynamically replaced by your current IP) | `list(string)` | <pre>[<br/>  "myip"<br/>]</pre> | no |
@@ -208,7 +208,7 @@ prek (or pre-commit) will run some autoformatters, and TFlint.
 ### Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_dns_validation_records"></a> [dns\_validation\_records](#output\_dns\_validation\_records) | DNS validation records to be created for ACM certificate |
 | <a name="output_efs_token"></a> [efs\_token](#output\_efs\_token) | EFS name creation token |
 | <a name="output_k8tre_argocd_cluster_name"></a> [k8tre\_argocd\_cluster\_name](#output\_k8tre\_argocd\_cluster\_name) | K8TRE dev cluster name |
