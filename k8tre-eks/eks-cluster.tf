@@ -15,10 +15,7 @@
 #
 # https://hackmd.io/@eCHO-live/138
 
-data "aws_caller_identity" "current" {}
-
 locals {
-  aws_account_id = data.aws_caller_identity.current.account_id
   admin_principals = merge({
     # Anyone in the AWS account with sufficient permissions can access the cluster
     aws_admins = "arn:aws:iam::${local.aws_account_id}:root"
@@ -329,6 +326,19 @@ resource "aws_eks_addon" "aws-efs-csi-driver" {
   }
 }
 
+resource "aws_eks_addon" "s3_csi_driver" {
+  count      = (var.deployment_stage >= 1 && local.enable_s3_csi > 0) ? 1 : 0
+  depends_on = [module.eks_nodegroup]
+
+  cluster_name                = module.eks.cluster_name
+  addon_name                  = "aws-mountpoint-s3-csi-driver"
+  resolve_conflicts_on_create = "OVERWRITE"
+
+  pod_identity_association {
+    role_arn        = module.mountpoint_s3_csi_pod_identity[0].iam_role_arn
+    service_account = "s3-csi-driver-sa"
+  }
+}
 
 data "aws_eks_cluster_auth" "k8tre" {
   name = var.cluster_name

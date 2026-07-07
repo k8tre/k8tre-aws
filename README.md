@@ -217,6 +217,7 @@ prek (or pre-commit) will run some autoformatters, and TFlint.
 | <a name="output_kubeconfig_command_k8tre-argocd-dev"></a> [kubeconfig\_command\_k8tre-argocd-dev](#output\_kubeconfig\_command\_k8tre-argocd-dev) | Create kubeconfig for k8tre-argocd-dev |
 | <a name="output_kubeconfig_command_k8tre-dev"></a> [kubeconfig\_command\_k8tre-dev](#output\_kubeconfig\_command\_k8tre-dev) | Create kubeconfig for k8tre-dev |
 | <a name="output_name"></a> [name](#output\_name) | Name used for most resources |
+| <a name="output_s3_studydata_bucket_name"></a> [s3\_studydata\_bucket\_name](#output\_s3\_studydata\_bucket\_name) | Name of the S3 studydata bucket |
 | <a name="output_service_access_prefix_list"></a> [service\_access\_prefix\_list](#output\_service\_access\_prefix\_list) | ID of the prefix list that can access services running on K8s |
 | <a name="output_vpc_cidr"></a> [vpc\_cidr](#output\_vpc\_cidr) | VPC CIDR |
 <!-- END_TF_DOCS -->

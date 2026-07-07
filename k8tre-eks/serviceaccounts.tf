@@ -1,10 +1,5 @@
 # EKS pod identities for Kubernetes Service Accounts
 
-locals {
-  create_pod_identities            = var.create_pod_identities ? 1 : 0
-  create_external_dns_pod_identity = (var.create_pod_identities && length(var.hosted_zone_ids) > 0) ? 1 : 0
-}
-
 ######################################################################
 # Built in policies
 # https://registry.terraform.io/modules/terraform-aws-modules/eks-pod-identity/aws/latest
@@ -29,20 +24,9 @@ module "eks_pod_identity_load_balancer" {
   }
 }
 
-module "aws_ebs_csi_pod_identity" {
-  source                    = "terraform-aws-modules/eks-pod-identity/aws"
-  version                   = var.module_eks_pod_identity_version
-  name                      = "aws-ebs-csi"
-  attach_aws_ebs_csi_policy = true
-  aws_ebs_csi_kms_arns      = ["arn:aws:kms:*:*:key/*"]
-}
 
-module "aws_efs_csi_pod_identity" {
-  source                    = "terraform-aws-modules/eks-pod-identity/aws"
-  version                   = var.module_eks_pod_identity_version
-  name                      = "aws-efs-csi"
-  attach_aws_efs_csi_policy = true
-}
+######################################################################
+# Optional pod identities
 
 module "cluster_autoscaler_pod_identity" {
   source                           = "terraform-aws-modules/eks-pod-identity/aws"

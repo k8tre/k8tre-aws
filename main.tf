@@ -135,6 +135,10 @@ module "k8tre-eks" {
   github_oidc_rolename = var.enable_github_oidc ? "${var.name}-github-oidc" : null
 
   additional_admin_principals = var.additional_admin_principals
+
+  # Storage
+  s3_mountable_bucket_arns = [aws_s3_bucket.studydata.arn]
+  s3_mountable_bucket_keys = [aws_kms_key.default-storage.arn]
 }
 
 
