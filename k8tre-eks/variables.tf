@@ -189,9 +189,16 @@ variable "cilium_version" {
 ######################################################################
 # Terraform module versions
 
+variable "module_eks_version" {
+  type        = string
+  description = "AWS EKS module version https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest"
+  default     = "21.24.0"
+  const       = true
+}
+
 variable "module_eks_pod_identity_version" {
   type        = string
-  description = "AWS EKS Pod Identity module version"
+  description = "AWS EKS Pod Identity module version https://registry.terraform.io/modules/terraform-aws-modules/eks-pod-identity/aws/latest"
   default     = "2.8.1"
   const       = true
 }

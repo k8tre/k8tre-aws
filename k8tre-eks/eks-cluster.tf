@@ -32,7 +32,7 @@ locals {
 # This assumes the EKS service linked role is already created (or the current user has permissions to create it)
 module "eks" {
   source             = "terraform-aws-modules/eks/aws"
-  version            = "21.15.1"
+  version            = var.module_eks_version
   name               = var.cluster_name
   kubernetes_version = var.k8s_version
   subnet_ids         = var.private_subnets
@@ -213,7 +213,7 @@ module "eks_nodegroup" {
   depends_on = [helm_release.cilium]
 
   source  = "terraform-aws-modules/eks/aws//modules/eks-managed-node-group"
-  version = "21.15.1"
+  version = var.module_eks_version
 
   cluster_name   = module.eks.cluster_name
   name           = "${module.eks.cluster_name}-wg1"
