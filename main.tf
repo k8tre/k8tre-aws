@@ -124,7 +124,7 @@ module "k8tre-eks" {
   # additional_eks_addons = {}
 
   # autoupdate_ami = false
-  # autoupdate_addons = false
+  autoupdate_addons = var.eks_autoupdate_addons
 
   create_pod_identities = true
   hosted_zone_ids = concat(
@@ -172,7 +172,8 @@ module "k8tre-argocd-eks" {
   wg1_max_size = 1
 
   # autoupdate_ami = false
-  # autoupdate_addons = false
+  autoupdate_addons = var.eks_autoupdate_addons
+
   create_pod_identities = false
 
   argocd_create_role            = true

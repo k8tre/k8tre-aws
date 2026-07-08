@@ -79,6 +79,17 @@ variable "efs_token" {
   default     = null
 }
 
+variable "eks_autoupdate_addons" {
+  type        = bool
+  default     = false
+  description = <<-EOT
+    Whether to autoupdate the versions of EKS addons when Terraform is run.
+    If you plan to upgrade EKS you may need to set this to `true` before the
+    upgrade since the current addon versions may not be compatible with the
+    planned upgrade.
+    EOT
+}
+
 variable "enable_github_oidc" {
   type        = bool
   description = "Create GitHub OIDC role"

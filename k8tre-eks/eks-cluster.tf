@@ -280,12 +280,29 @@ module "eks_nodegroup" {
 
 # Now that the nodegroup is ready we can deploy addons
 
+# By default EKS will install the "recommended" version for the EKS version
+# Optionally install the latest supported version for the EKS version which
+# may be needed when upgrading EKS
+data "aws_eks_addon_version" "latest" {
+  for_each = toset([
+    "coredns",
+    "eks-pod-identity-agent",
+    "aws-ebs-csi-driver",
+    "aws-efs-csi-driver",
+    "aws-mountpoint-s3-csi-driver",
+  ])
+  addon_name         = each.value
+  kubernetes_version = module.eks.cluster_version
+  most_recent        = true
+}
+
 resource "aws_eks_addon" "coredns" {
   count      = (var.deployment_stage >= 1) ? 1 : 0
   depends_on = [module.eks_nodegroup]
 
   cluster_name                = module.eks.cluster_name
   addon_name                  = "coredns"
+  addon_version               = var.autoupdate_addons ? data.aws_eks_addon_version.latest["coredns"].version : null
   resolve_conflicts_on_create = "OVERWRITE"
 }
 
@@ -295,6 +312,7 @@ resource "aws_eks_addon" "eks-pod-identity-agent" {
 
   cluster_name                = module.eks.cluster_name
   addon_name                  = "eks-pod-identity-agent"
+  addon_version               = var.autoupdate_addons ? data.aws_eks_addon_version.latest["eks-pod-identity-agent"].version : null
   resolve_conflicts_on_create = "OVERWRITE"
 }
 
@@ -304,6 +322,7 @@ resource "aws_eks_addon" "aws-ebs-csi-driver" {
 
   cluster_name                = module.eks.cluster_name
   addon_name                  = "aws-ebs-csi-driver"
+  addon_version               = var.autoupdate_addons ? data.aws_eks_addon_version.latest["aws-ebs-csi-driver"].version : null
   resolve_conflicts_on_create = "OVERWRITE"
 
   pod_identity_association {
@@ -318,6 +337,7 @@ resource "aws_eks_addon" "aws-efs-csi-driver" {
 
   cluster_name                = module.eks.cluster_name
   addon_name                  = "aws-efs-csi-driver"
+  addon_version               = var.autoupdate_addons ? data.aws_eks_addon_version.latest["aws-efs-csi-driver"].version : null
   resolve_conflicts_on_create = "OVERWRITE"
 
   pod_identity_association {
@@ -332,6 +352,7 @@ resource "aws_eks_addon" "s3_csi_driver" {
 
   cluster_name                = module.eks.cluster_name
   addon_name                  = "aws-mountpoint-s3-csi-driver"
+  addon_version               = var.autoupdate_addons ? data.aws_eks_addon_version.latest["aws-mountpoint-s3-csi-driver"].version : null
   resolve_conflicts_on_create = "OVERWRITE"
 
   pod_identity_association {
