@@ -23,7 +23,7 @@ variable "private_subnets" {
 variable "k8s_version" {
   type        = string
   description = "Kubernetes cluster version"
-  default     = "1.35"
+  default     = "1.36"
 }
 
 variable "k8s_api_cidrs" {

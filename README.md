@@ -86,6 +86,15 @@ terraform apply -var-file=overrides.tfvars -var deployment_stage=3
 
 If any commands file or timeout try rerunning them.
 
+On subsequent runs, for instance after updating your configuration, you can use the default
+
+```sh
+terraform apply -var-file=overrides.tfvars
+```
+
+Occasionally this may finish successfully, but some dependent resources will still be out of date, for example after upgrading the EKS cluster version
+Rerun this command to be sure.
+
 ### K8TRE secrets
 
 K8TRE requires several secrets in AWS SSM, such as credentials for applications.
