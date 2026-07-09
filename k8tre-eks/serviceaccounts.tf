@@ -1,17 +1,12 @@
 # EKS pod identities for Kubernetes Service Accounts
 
-locals {
-  create_pod_identities            = var.create_pod_identities ? 1 : 0
-  create_external_dns_pod_identity = (var.create_pod_identities && length(var.hosted_zone_ids) > 0) ? 1 : 0
-}
-
 ######################################################################
 # Built in policies
 # https://registry.terraform.io/modules/terraform-aws-modules/eks-pod-identity/aws/latest
 
 module "eks_pod_identity_load_balancer" {
   source                          = "terraform-aws-modules/eks-pod-identity/aws"
-  version                         = "2.7.0"
+  version                         = var.module_eks_pod_identity_version
   name                            = "${module.eks.cluster_name}-aws-lb-controller"
   attach_aws_lb_controller_policy = true
 
@@ -29,24 +24,13 @@ module "eks_pod_identity_load_balancer" {
   }
 }
 
-module "aws_ebs_csi_pod_identity" {
-  source                    = "terraform-aws-modules/eks-pod-identity/aws"
-  version                   = "2.7.0"
-  name                      = "aws-ebs-csi"
-  attach_aws_ebs_csi_policy = true
-  aws_ebs_csi_kms_arns      = ["arn:aws:kms:*:*:key/*"]
-}
 
-module "aws_efs_csi_pod_identity" {
-  source                    = "terraform-aws-modules/eks-pod-identity/aws"
-  version                   = "2.7.0"
-  name                      = "aws-efs-csi"
-  attach_aws_efs_csi_policy = true
-}
+######################################################################
+# Optional pod identities
 
 module "cluster_autoscaler_pod_identity" {
   source                           = "terraform-aws-modules/eks-pod-identity/aws"
-  version                          = "2.7.0"
+  version                          = var.module_eks_pod_identity_version
   count                            = local.create_pod_identities
   name                             = "cluster-autoscaler"
   attach_cluster_autoscaler_policy = true
@@ -68,7 +52,7 @@ module "cluster_autoscaler_pod_identity" {
 
 module "external_dns_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "2.7.0"
+  version = var.module_eks_pod_identity_version
 
   count = local.create_external_dns_pod_identity
 
@@ -88,7 +72,7 @@ module "external_dns_pod_identity" {
 
 module "external_secrets_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "2.7.0"
+  version = var.module_eks_pod_identity_version
   count   = local.create_pod_identities
 
   name = "external-secrets"
@@ -128,7 +112,7 @@ data "aws_iam_policy_document" "ack_ec2" {
 
 module "ack_ec2_pod_identity" {
   source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "2.7.0"
+  version = var.module_eks_pod_identity_version
   count   = local.create_pod_identities
   name    = "ack-ec2-controller"
 

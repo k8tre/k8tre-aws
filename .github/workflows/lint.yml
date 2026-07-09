@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     env:
-      TERRAFORM_VERSION: 1.12.1
-      TERRAFORM_DOCS_VERSION: 0.21.0
-      TFLINT_VERSION: 0.61.0
+      TERRAFORM_VERSION: 1.15.6
+      TERRAFORM_DOCS_VERSION: 0.24.0
+      TFLINT_VERSION: 0.63.1
 
     steps:
       - name: Checkout

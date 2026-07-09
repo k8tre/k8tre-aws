@@ -99,11 +99,11 @@ variable "autoupdate_ami" {
   description = "Whether to autoupdate the AMI version when Terraform is run"
 }
 
-# variable "autoupdate_addons" {
-#   type        = bool
-#   default     = false
-#   description = "Whether to autoupdate the versions of EKS addons when Terraform is run"
-# }
+variable "autoupdate_addons" {
+  type        = bool
+  default     = false
+  description = "Whether to autoupdate the versions of EKS addons when Terraform is run"
+}
 
 variable "create_pod_identities" {
   type        = bool
@@ -115,6 +115,18 @@ variable "hosted_zone_ids" {
   type        = list(string)
   default     = []
   description = "Route53 hosted zone IDs for External DNS, set to empty to disable"
+}
+
+variable "s3_mountable_bucket_arns" {
+  type        = list(string)
+  default     = []
+  description = "List of S3 bucket ARNs that may be mounted into pods"
+}
+
+variable "s3_mountable_bucket_keys" {
+  type        = list(string)
+  default     = []
+  description = "List of KMS key ARNs required to decrypt data mounted into pods, must be set if s3_mountable_buckets is non-empty"
 }
 
 variable "argocd_create_role" {
@@ -171,4 +183,22 @@ variable "cilium_version" {
   type        = string
   description = "Cilium version"
   default     = "1.19.2"
+}
+
+
+######################################################################
+# Terraform module versions
+
+variable "module_eks_version" {
+  type        = string
+  description = "AWS EKS module version https://registry.terraform.io/modules/terraform-aws-modules/eks/aws/latest"
+  default     = "21.24.0"
+  const       = true
+}
+
+variable "module_eks_pod_identity_version" {
+  type        = string
+  description = "AWS EKS Pod Identity module version https://registry.terraform.io/modules/terraform-aws-modules/eks-pod-identity/aws/latest"
+  default     = "2.8.1"
+  const       = true
 }

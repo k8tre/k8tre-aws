@@ -26,7 +26,7 @@ terraform {
     }
   }
 
-  required_version = ">= 1.10.0"
+  required_version = ">= 1.15.0"
 }
 
 data "aws_eks_cluster_auth" "eks" {

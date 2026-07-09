@@ -171,7 +171,7 @@ prek (or pre-commit) will run some autoformatters, and TFlint.
 ### Modules
 
 | Name | Source | Version |
-|------|--------|---------|
+| ---- | ------ | ------- |
 | <a name="module_certificate"></a> [certificate](#module\_certificate) | ./certificate | n/a |
 | <a name="module_dnsresolver"></a> [dnsresolver](#module\_dnsresolver) | ./dnsresolver | n/a |
 | <a name="module_efs"></a> [efs](#module\_efs) | ./efs | n/a |
@@ -182,7 +182,7 @@ prek (or pre-commit) will run some autoformatters, and TFlint.
 ### Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_additional_admin_principals"></a> [additional\_admin\_principals](#input\_additional\_admin\_principals) | Additional EKS admin principals | `map(string)` | `{}` | no |
 | <a name="input_additional_k8s_manifests"></a> [additional\_k8s\_manifests](#input\_additional\_k8s\_manifests) | List of paths to additional K8s manifests (one per file, multidoc YAML files are not supported) | `list(string)` | `[]` | no |
 | <a name="input_allowed_cidrs"></a> [allowed\_cidrs](#input\_allowed\_cidrs) | CIDRs allowed to access K8TRE ('myip' is dynamically replaced by your current IP) | `list(string)` | <pre>[<br/>  "myip"<br/>]</pre> | no |
@@ -191,6 +191,7 @@ prek (or pre-commit) will run some autoformatters, and TFlint.
 | <a name="input_deployment_stage"></a> [deployment\_stage](#input\_deployment\_stage) | Multi-stage deployment step.<br/>  This is necessary because Terraform needs to resolve some resources before<br/>  running, but those resource amy not exist yet.<br/>  For the first deployment you must step through these starting at<br/>  '-var deployment\_stage=0', then '-var deployment\_stage=1'.<br/>  Future deployment can use the highest number (default). | `number` | `3` | no |
 | <a name="input_dns_domain"></a> [dns\_domain](#input\_dns\_domain) | DNS domain | `string` | `"k8tre.internal"` | no |
 | <a name="input_efs_token"></a> [efs\_token](#input\_efs\_token) | EFS name creation token, if null default to var.name | `string` | `null` | no |
+| <a name="input_eks_autoupdate_addons"></a> [eks\_autoupdate\_addons](#input\_eks\_autoupdate\_addons) | Whether to autoupdate the versions of EKS addons when Terraform is run.<br/>If you plan to upgrade EKS you may need to set this to `true` before the<br/>upgrade since the current addon versions may not be compatible with the<br/>planned upgrade. | `bool` | `false` | no |
 | <a name="input_enable_github_oidc"></a> [enable\_github\_oidc](#input\_enable\_github\_oidc) | Create GitHub OIDC role | `bool` | `false` | no |
 | <a name="input_install_k8tre"></a> [install\_k8tre](#input\_install\_k8tre) | Install K8TRE root app-of-apps | `bool` | `true` | no |
 | <a name="input_k8tre_cluster_label_overrides"></a> [k8tre\_cluster\_label\_overrides](#input\_k8tre\_cluster\_label\_overrides) | Additional labels merged with k8tre\_cluster\_labels and applied to K8TRE cluster | `map(string)` | `{}` | no |
@@ -208,7 +209,7 @@ prek (or pre-commit) will run some autoformatters, and TFlint.
 ### Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_dns_validation_records"></a> [dns\_validation\_records](#output\_dns\_validation\_records) | DNS validation records to be created for ACM certificate |
 | <a name="output_efs_token"></a> [efs\_token](#output\_efs\_token) | EFS name creation token |
 | <a name="output_k8tre_argocd_cluster_name"></a> [k8tre\_argocd\_cluster\_name](#output\_k8tre\_argocd\_cluster\_name) | K8TRE dev cluster name |
@@ -217,6 +218,7 @@ prek (or pre-commit) will run some autoformatters, and TFlint.
 | <a name="output_kubeconfig_command_k8tre-argocd-dev"></a> [kubeconfig\_command\_k8tre-argocd-dev](#output\_kubeconfig\_command\_k8tre-argocd-dev) | Create kubeconfig for k8tre-argocd-dev |
 | <a name="output_kubeconfig_command_k8tre-dev"></a> [kubeconfig\_command\_k8tre-dev](#output\_kubeconfig\_command\_k8tre-dev) | Create kubeconfig for k8tre-dev |
 | <a name="output_name"></a> [name](#output\_name) | Name used for most resources |
+| <a name="output_s3_studydata_bucket_name"></a> [s3\_studydata\_bucket\_name](#output\_s3\_studydata\_bucket\_name) | Name of the S3 studydata bucket |
 | <a name="output_service_access_prefix_list"></a> [service\_access\_prefix\_list](#output\_service\_access\_prefix\_list) | ID of the prefix list that can access services running on K8s |
 | <a name="output_vpc_cidr"></a> [vpc\_cidr](#output\_vpc\_cidr) | VPC CIDR |
 <!-- END_TF_DOCS -->
