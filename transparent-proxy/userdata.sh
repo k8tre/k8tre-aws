@@ -1,177 +1,191 @@
-#!/usr/bin/sh
+#!/usr/bin/bash
 set -ex
-
-
-############################################################
-# 1. Kernel Routing & Sysctl Tuning for TPROXY
-############################################################
 
 export DEBIAN_FRONTEND=noninteractive
 echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
 echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
 
+
+############################################################
+# Install proxy
+############################################################
+
 # Use DPkg::Lock::Timeout=180 to avoid failing if an automatic update is in progress
 apt-get update -y -o DPkg::Lock::Timeout=180
-apt-get install -y -o DPkg::Lock::Timeout=180 iptables-persistent netfilter-persistent haproxy unzip
+apt-get install -y -o DPkg::Lock::Timeout=180 \
+  iptables-persistent \
+  jq \
+  netfilter-persistent \
+  openssl \
+  squid-openssl \
+  unzip
 
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
 ./aws/install
 
-# ens5 should be the default NIC, if it isn't this will error out
-ip addr show ens5
 
-# Disable Strict Reverse Path Forwarding (required for TPROXY)
-# Enable nonlocal bind (required for HAProxy transparent mode)
-cat << 'SYSCTL' > /etc/sysctl.d/99-tproxy.conf
+############################################################
+# Setup routing and iptables
+############################################################
+
+INTERFACE=$(ip -j route show default | jq -r '.[0].dev')
+if [ -z "$INTERFACE" ] || [ "$INTERFACE" = "null" ]; then
+  echo "ERROR: Failed to find default network interface"
+  exit 1
+fi
+echo "Using network interface: $INTERFACE"
+ip addr show "$INTERFACE"
+
+cat << 'SYSCTL' > /etc/sysctl.d/99-proxy.conf
 net.ipv4.ip_forward = 1
-net.ipv4.ip_nonlocal_bind = 1
-net.ipv4.conf.default.rp_filter = 0
-net.ipv4.conf.all.rp_filter = 0
-net.ipv4.conf.ens5.rp_filter = 0
 SYSCTL
 sysctl --system
-
-############################################################
-# 2. Configure iptables for TPROXY
-############################################################
-
-# Create Netplan routing policy and route to persist the TPROXY rules across network events (DHCP renewals)
-cat << 'NETPLAN' > /etc/netplan/99-tproxy.yaml
-network:
-  version: 2
-  ethernets:
-    ens5:
-      routing-policy:
-        - from: 0.0.0.0/0
-          mark: 1
-          table: 100
-    lo:
-      routes:
-        - to: 0.0.0.0/0
-          type: local
-          table: 100
-NETPLAN
-netplan generate
-netplan apply
 
 # Flush any existing rules
 iptables -t nat -F
 iptables -t mangle -F
 ip6tables -F
 
-# IMPORTANT: Reject IPv6 forwarding so EKS nodes instantly fall back to IPv4
-ip6tables -A FORWARD -i ens5 -j REJECT
+# Reject IPv6 forwarding so EKS nodes instantly fall back to IPv4
+ip6tables -A FORWARD -i "$INTERFACE" -j REJECT
 
-# DIVERT chain to prevent re-intercepting established TPROXY connections
-iptables -t mangle -N DIVERT
-iptables -t mangle -A PREROUTING -p tcp -m socket -j DIVERT
-iptables -t mangle -A DIVERT -j MARK --set-mark 1
-iptables -t mangle -A DIVERT -j ACCEPT
+# Redirect HTTP and HTTPS traffic
+iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 3128
+iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 3129
 
-# Intercept standard HTTP and HTTPS
-iptables -t mangle -A PREROUTING -i ens5 -p tcp --dport 80 -j TPROXY --tproxy-mark 0x1/0x1 --on-port 3128
-iptables -t mangle -A PREROUTING -i ens5 -p tcp --dport 443 -j TPROXY --tproxy-mark 0x1/0x1 --on-port 3129
-
-# Masquerade outbound traffic leaving the proxy (EXCLUDING AWS Metadata)
-iptables -t nat -A POSTROUTING -o ens5 ! -d 169.254.169.254/32 -j MASQUERADE
+# Masquerade outbound traffic leaving the proxy
+# iptables -t nat -A POSTROUTING -o "$INTERFACE" ! -d 169.254.169.254/32 -j MASQUERADE
+iptables -t nat -A POSTROUTING -o "$INTERFACE" -j MASQUERADE
 
 iptables-save > /etc/iptables/rules.v4
 ip6tables-save > /etc/iptables/rules.v6
 systemctl enable netfilter-persistent
 systemctl restart netfilter-persistent
 
+
 ############################################################
-# 3. Configure HAProxy
+# Configure Squid
 ############################################################
 
-mkdir -p /etc/haproxy
-touch /etc/haproxy/allowlist.txt
-chown haproxy:haproxy /etc/haproxy/allowlist.txt
+# Generate dummy SSL certificate required for Squid's transparent peering framework
+mkdir -p /etc/squid/ssl
+openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 \
+  -subj "/C=UK/O=K8TRE/CN=transparent-proxy" \
+  -keyout /etc/squid/ssl/dummy.pem -out /etc/squid/ssl/dummy.pem
+chown -R proxy:proxy /etc/squid/ssl
+chmod 400 /etc/squid/ssl/dummy.pem
 
-cat << 'HAPROXY' > /etc/haproxy/haproxy.cfg
-global
-    log /dev/log local0 debug
-    user haproxy
-    group haproxy
-    daemon
+# Initialize the SSL certificate database for the certgen helper
+mkdir -p /var/lib/squid
+rm -rf /var/lib/squid/ssl_db
+/usr/lib/squid/security_file_certgen -c -s /var/lib/squid/ssl_db -M 4MB
+# Give the squid user ownership of the new database
+chown -R proxy:proxy /var/lib/squid
 
-defaults
-    log global
-    option tcplog
-    timeout connect 5s
-    timeout client  300s
-    timeout server  300s
+# Ensure file exists before first s3 copy, must be non-empty
+echo localhost > /etc/squid/allowlist.txt
+chown proxy:proxy /etc/squid/allowlist.txt
 
-frontend http_transparent
-    bind *:3128 transparent
-    mode http
+# Overwrite default Squid configuration for transparent peek-and-splice
+cat << 'SQUID' > /etc/squid/squid.conf
+# Fix public hostname warning (unable to detect)
+visible_hostname squid-proxy
 
-    # 1. Capture the Host header into slot 0
-    http-request capture req.hdr(host) len 128
+######################################################################
+# Access Control Lists
 
-    # 2. Use the captured value in the log-format (captures are accessed via %[capture.req.hdr(0)])
-    log-format %ci:%cp\ [%t]\ %ft\ %b/%s\ %Tw/%Tc/%Tt\ %B\ %ts\ %ac/%fc/%bc/%sc/%rc\ %sq/%bq\ HOST:%[capture.req.hdr(0)]
+# This is complicated because for HTTPS we want to check the SNI host, but
+# if it's allowed we want to pass the request through unchanged without
+# replacing it with our dummy certificate
+acl SSL_port port 443
 
-    # 3. Filter
-    acl allowed_http req.hdr(host) -i -m reg -f /etc/haproxy/allowlist.txt
-    http-request deny if !allowed_http
+# Define an ACL that matches Step 1 only of the TLS handshake
+acl step1 at_step SslBump1
 
-    default_backend backend_http
+acl allowed_domains dstdomain "/etc/squid/allowlist.txt"
+acl allowed_domains_ssl ssl::server_name "/etc/squid/allowlist.txt"
 
-frontend https_transparent
-    bind *:3129 transparent
-    mode tcp
+# Avoid warning in the HTTP rule when HTTPS is blocked, since there's no response
+acl hasResponse has response
+acl http_blocked http_status 403
+acl http_blocked_safe all-of hasResponse http_blocked
 
-    # 1. Wait for TLS ClientHello
-    tcp-request inspect-delay 5s
+# HTTPS/TLS block rules (handshake terminated, no response returned)
+acl ssl_blocked_hier hier_code HIER_NONE
+acl ssl_blocked_status transaction_initiator client
+acl ssl_blocked all-of CONNECT ssl_blocked_hier ssl_blocked_status !allowed_domains_ssl
 
-    # 2. Extract SNI and save it to a session variable "sess.sni"
-    tcp-request content set-var(sess.sni) req_ssl_sni
+# Combine them into a single "any_blocked" rule
+acl any_blocked any-of http_blocked_safe ssl_blocked
 
-    # 3. Log using the variable we just saved
-    log-format %ci:%cp\ [%t]\ %ft\ %b/%s\ %Tw/%Tc/%Tt\ %B\ %ts\ %ac/%fc/%bc/%sc/%rc\ %sq/%bq\ SNI:%[var(sess.sni)]
 
-    # 4. Accept if SNI is valid
-    tcp-request content accept if { req_ssl_hello_type 1 } { req_ssl_sni -i -m reg -f /etc/haproxy/allowlist.txt }
+######################################################################
+# Logging
 
-    # 5. Reject everything else
-    tcp-request content reject
+# Custom log format that includes SNI server name
+# Note HTTPS will always result in the initial connect log, but no tunnel will be created
+logformat transparent_sni %ts.%03tu %6tr %>a %Ss/%03>Hs %<st %rm %ru %ssl::>sni %Sh/%<A %mt
+access_log daemon:/var/log/squid/access.log transparent_sni
 
-    default_backend backend_https
+# Log blocked requests only
+access_log daemon:/var/log/squid/blocked.log transparent_sni any_blocked
 
-backend backend_http
-    mode http
-    server original_dst 0.0.0.0:0
 
-backend backend_https
-    mode tcp
-    server original_dst 0.0.0.0:0
-HAPROXY
+######################################################################
+# Filtering
 
-# Isolate HAProxy logs for CloudWatch
-cat << 'RSYSLOG' > /etc/rsyslog.d/99-haproxy.conf
-local0.* /var/log/haproxy.log
-& stop
-RSYSLOG
-systemctl restart rsyslog
+# Standard forward-proxy port (required by Squid to start)
+http_port localhost:3130
 
-# Systemd override: Give HAProxy network admin rights for the transparent bind
-mkdir -p /etc/systemd/system/haproxy.service.d
-cat << 'SYSTEMD_OVERRIDE' > /etc/systemd/system/haproxy.service.d/override.conf
+# Intercept standard HTTP
+http_port 3128 intercept
+
+# Intercept HTTPS (using ssl-bump parsing)
+https_port 3129 intercept ssl-bump cert=/etc/squid/ssl/dummy.pem generate-host-certificates=on dynamic_cert_mem_cache_size=4MB
+
+# Point to the initialized cert database
+sslcrtd_program /usr/lib/squid/security_file_certgen -s /var/lib/squid/ssl_db -M 4MB
+
+# SSL Bump configuration
+# ONLY peek if at step 1, to prevent the dummy certificate being returned to client
+ssl_bump peek step1
+# If the SNI matches our whitelist, splice (pass through untouched)
+ssl_bump splice allowed_domains_ssl
+# Otherwise terminate the connection.
+ssl_bump terminate all
+
+# Disable caching since we're only interested in restricting domains
+cache deny all
+
+# Allow standard HTTP traffic if it matches the whitelist
+http_access allow allowed_domains
+# Allow intercepted HTTPS IP addresses to pass this initial check.
+http_access allow SSL_port
+# Block everything else
+http_access deny all
+SQUID
+
+# Create a systemd drop-in directory to override Squid's default startup mechanics
+mkdir -p /etc/systemd/system/squid.service.d
+
+# Systemd override
+# - Fetch allowlist before starting
+# - Allow network admin for the transparent bind
+cat << 'SYSTEMD_OVERRIDE' > /etc/systemd/system/squid.service.d/override.conf
 [Service]
-AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
-ExecStartPre=/usr/local/bin/aws s3 cp s3://${s3_config_bucket}/${name}-transparent-proxy/allowlist.txt /etc/haproxy/allowlist.txt
-ExecStartPre=/bin/chown haproxy:haproxy /etc/haproxy/allowlist.txt
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+ExecStartPre=/usr/local/bin/aws s3 cp s3://${s3_config_bucket}/${name}-transparent-proxy/allowlist.txt /etc/squid/allowlist.txt
+ExecStartPre=/bin/chown proxy:proxy /etc/squid/allowlist.txt
 SYSTEMD_OVERRIDE
 
 systemctl daemon-reload
-systemctl restart haproxy
-systemctl enable haproxy
+systemctl restart squid
+systemctl enable squid
 
 
 ############################################################
-# 4. CloudWatch agent
+# CloudWatch agent
 ############################################################
 
 wget https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb -O /tmp/amazon-cloudwatch-agent.deb
@@ -187,8 +201,14 @@ cat << 'CWAGENT' > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.
       "files": {
         "collect_list": [
           {
-            "file_path": "/var/log/haproxy.log",
+            "file_path": "/var/log/squid/access.log",
             "log_group_name": "${name}/transparent-proxy",
+            "log_stream_name": "{instance_id}",
+            "timezone": "UTC"
+          },
+          {
+            "file_path": "/var/log/squid/blocked.log",
+            "log_group_name": "${name}/transparent-proxy/blocked",
             "log_stream_name": "{instance_id}",
             "timezone": "UTC"
           }

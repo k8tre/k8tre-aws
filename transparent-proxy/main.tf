@@ -12,7 +12,7 @@ terraform {
 resource "aws_s3_object" "allowlist" {
   bucket       = var.s3_config_bucket
   key          = "${var.name}-transparent-proxy/allowlist.txt"
-  content      = format("%s\n", join("\n", var.allowed_domains_re))
+  content      = format("%s\n", join("\n", var.allowed_domains))
   content_type = "text/plain"
 }
 
@@ -160,11 +160,29 @@ resource "aws_cloudwatch_log_group" "transparent_proxy" {
   # Use default server-side encryption
 }
 
-resource "aws_cloudwatch_log_metric_filter" "transparent_proxy_denied" {
-  name    = aws_cloudwatch_log_group.transparent_proxy.name
-  pattern = "\"<NOSRV>\""
+resource "aws_cloudwatch_log_group" "transparent_proxy_blocked" {
+  name              = "${var.name}/transparent-proxy/blocked"
+  retention_in_days = var.log_group_retention_days
 
-  log_group_name = aws_cloudwatch_log_group.transparent_proxy.name
+  # Use default server-side encryption
+}
+
+resource "aws_cloudwatch_log_metric_filter" "transparent_proxy_denied" {
+  name = aws_cloudwatch_log_group.transparent_proxy_blocked.name
+
+  # https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html#matching-term-space-delimited-log-events
+
+  # Example HTTP blocked:
+  # 1784111048.914      2 10.0.102.15 TCP_DENIED/403 3395 GET http://www.example.org/ - HIER_NONE/- text/html
+  # Example HTTPS blocked (not performing MITM so can't return 403, instead terminate the connection):
+  # 1784111050.687      3 10.0.102.15 NONE_NONE/000 0 CONNECT 172.66.157.237:443 www.example.org HIER_NONE/- -
+
+  # Matches blocks
+  # - HTTP: TCP_DENIED
+  # - HTTPS: NONE_NONE with 0 bytes transferred
+  pattern = "[timestamp, duration, client_ip, status = \"TCP_DENIED*\" || status = \"NONE_NONE*\", size, method, url, ...]"
+
+  log_group_name = aws_cloudwatch_log_group.transparent_proxy_blocked.name
 
   metric_transformation {
     name          = "ProxyDenied"
@@ -176,7 +194,7 @@ resource "aws_cloudwatch_log_metric_filter" "transparent_proxy_denied" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "transparent_proxy_denied" {
-  alarm_name                = "Transparent proxy NOSRV rate"
+  alarm_name                = "Transparent proxy TCP_DENIED rate"
   comparison_operator       = "GreaterThanThreshold"
   evaluation_periods        = "1"
   metric_name               = "ProxyDenied"
@@ -184,7 +202,7 @@ resource "aws_cloudwatch_metric_alarm" "transparent_proxy_denied" {
   period                    = "30"
   statistic                 = "Sum"
   threshold                 = "1"
-  alarm_description         = "Transparent proxy NOSRV requests is higher than expected"
+  alarm_description         = "Transparent proxy TCP_DENIED requests is higher than expected"
   insufficient_data_actions = []
   alarm_actions             = []
   ok_actions                = []

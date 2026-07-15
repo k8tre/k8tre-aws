@@ -242,6 +242,6 @@ module "transparent-proxy" {
   private_subnet_route_table_ids   = module.vpc.private_route_table_ids
   private_subnet_route_table_cidrs = var.outbound_proxy_cidrs
 
-  s3_config_bucket   = aws_s3_bucket.services-config.id
-  allowed_domains_re = concat(var.default_outbound_proxy_allowed_domains_re, var.additional_outbound_proxy_allowed_domains_re)
+  s3_config_bucket = aws_s3_bucket.services-config.id
+  allowed_domains  = concat(var.default_outbound_proxy_allowed_domains, var.additional_outbound_proxy_allowed_domains)
 }
