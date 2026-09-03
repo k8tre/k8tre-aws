@@ -60,12 +60,3 @@ module "mountpoint_s3_csi_pod_identity" {
     service_account = "s3-csi-driver-sa"
   }
 }
-
-resource "aws_vpc_endpoint" "s3_gateway" {
-  count = local.create_s3_csi_pod_identity
-
-  vpc_id            = var.vpc_id
-  vpc_endpoint_type = "Gateway"
-  service_name      = "com.amazonaws.${data.aws_region.current.region}.s3"
-  # policy =
-}

@@ -67,6 +67,15 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "studydata" {
 
 
 ######################################################################
+# Bucket for storing configuration
+
+resource "aws_s3_bucket" "services-config" {
+  bucket_prefix = "${var.name}-config-"
+  force_destroy = true
+}
+
+
+######################################################################
 # DNS
 
 module "dnsresolver" {
@@ -115,4 +124,124 @@ module "certificate" {
   subject_alternative_names = [var.dns_domain]
 
   request_acm_certificate = var.request_certificate == "acm" ? true : false
+}
+
+
+######################################################################
+# VPC endpoints
+
+resource "aws_security_group" "vpc_endpoints" {
+  name        = "eks-vpc-endpoints-sg"
+  description = "Allow inbound HTTPS to VPC Endpoints"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    description = "Allow HTTPS from VPC"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [module.vpc.vpc_cidr_block]
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+}
+
+# https://docs.aws.amazon.com/eks/latest/userguide/private-clusters.html
+# https://docs.aws.amazon.com/vpc/latest/privatelink/aws-services-privatelink-support.html
+resource "aws_vpc_endpoint" "interface" {
+  for_each = toset([
+    # CloudWatch logs
+    "com.amazonaws.${var.region}.logs",
+
+    # Encrypted secrets and storage
+    "com.amazonaws.${var.region}.kms",
+
+    # Needed for AssumeRole
+    "com.amazonaws.${var.region}.sts",
+
+    # EC2 instances, and EBS storage volumes
+    "com.amazonaws.${var.region}.ec2",
+
+    # EFS
+    "com.amazonaws.${var.region}.elasticfilesystem",
+
+    # Autoscaling controller
+    "com.amazonaws.${var.region}.autoscaling",
+
+    # Uncomment if using ECR hosted images
+    # "com.amazonaws.${var.region}.ecr.api",
+    # "com.amazonaws.${var.region}.ecr.dkr",
+
+    # EKS
+    "com.amazonaws.${var.region}.eks",
+    # EKS pod identities
+    "com.amazonaws.${var.region}.eks-auth",
+
+    # Load balancing
+    "com.amazonaws.${var.region}.elasticloadbalancing",
+
+    # SSM sessions and SSM Parameter store (External Secrets operator)
+    "com.amazonaws.${var.region}.ssm",
+
+    # SSM sessions
+    "com.amazonaws.${var.region}.ec2messages",
+    "com.amazonaws.${var.region}.ssmmessages",
+
+    # "aws.api.${var.region}.s3files",
+  ])
+  service_name = each.value
+
+  vpc_id              = module.vpc.vpc_id
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = module.vpc.private_subnets
+  private_dns_enabled = true
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  # policy =
+}
+
+resource "aws_vpc_endpoint" "route53_interface_endpoint" {
+  vpc_id            = module.vpc.vpc_id
+  vpc_endpoint_type = "Interface"
+  # This is a global service
+  service_name       = "com.amazonaws.route53"
+  service_region     = "us-east-1"
+  subnet_ids         = module.vpc.private_subnets
+  security_group_ids = [aws_security_group.vpc_endpoints.id]
+
+  # policy =
+}
+
+resource "aws_vpc_endpoint" "s3_gateway_endpoint" {
+  vpc_id            = module.vpc.vpc_id
+  vpc_endpoint_type = "Gateway"
+  service_name      = "com.amazonaws.${var.region}.s3"
+  route_table_ids   = module.vpc.private_route_table_ids
+
+  # policy =
+}
+
+
+######################################################################
+# Transparent proxy
+
+module "transparent-proxy" {
+  count = var.require_outbound_proxy ? 1 : 0
+
+  source                           = "./transparent-proxy"
+  name                             = var.name
+  vpc_id                           = module.vpc.vpc_id
+  vpc_cidr                         = module.vpc.vpc_cidr_block
+  public_subnet                    = module.vpc.public_subnets[0]
+  private_subnet_route_table_ids   = module.vpc.private_route_table_ids
+  private_subnet_route_table_cidrs = var.outbound_proxy_cidrs
+
+  s3_config_bucket = aws_s3_bucket.services-config.id
+  allowed_domains  = concat(var.default_outbound_proxy_allowed_domains, var.additional_outbound_proxy_allowed_domains)
 }

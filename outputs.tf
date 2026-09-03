@@ -49,6 +49,11 @@ output "dns_validation_records" {
   value       = module.certificate[*].dns_validation_records
 }
 
+output "proxy_ec2_instance_id" {
+  description = "Transparent proxy EC2 instance ID if enabled"
+  value       = module.transparent-proxy[*].instance_id
+}
+
 output "s3_studydata_bucket_name" {
   description = "Name of the S3 studydata bucket"
   value       = aws_s3_bucket.studydata.id

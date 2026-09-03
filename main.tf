@@ -9,6 +9,8 @@ locals {
     for ip in var.allowed_cidrs :
     replace(ip, "/^myip$/", "${chomp(data.http.myip.response_body)}/32")
   ]
+  create_private_nat_gateway_route = !var.require_outbound_proxy && !contains(var.outbound_proxy_cidrs, "0.0.0.0/0")
+
 }
 
 
@@ -28,6 +30,8 @@ module "vpc" {
   private_subnets    = var.private_subnets
   enable_nat_gateway = true
   single_nat_gateway = true
+
+  create_private_nat_gateway_route = local.create_private_nat_gateway_route
 
   # tags = {
   #   "kubernetes.io/cluster/${var.cluster_name}" = "shared"
